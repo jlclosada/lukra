@@ -3,6 +3,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
   history: createWebHistory(),
+  scrollBehavior() {
+    return { top: 0 }
+  },
   routes: [
     {
       path: '/',
@@ -20,6 +23,26 @@ const router = createRouter({
       name: 'register',
       component: () => import('@/pages/RegisterPage.vue'),
       meta: { guestOnly: true },
+    },
+    {
+      path: '/looks',
+      name: 'looks',
+      component: () => import('@/pages/LooksPage.vue'),
+    },
+    {
+      path: '/articles',
+      name: 'articles',
+      component: () => import('@/pages/ArticlesPage.vue'),
+    },
+    {
+      path: '/trends',
+      name: 'trends',
+      component: () => import('@/pages/TrendsPage.vue'),
+    },
+    {
+      path: '/about',
+      name: 'about',
+      component: () => import('@/pages/AboutPage.vue'),
     },
     {
       path: '/profile',

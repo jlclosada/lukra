@@ -1,92 +1,90 @@
 @import 'tailwindcss';
 
 /* ── Custom Properties (Design Tokens) ── */
-:root {
-  --color-bg: #fafaf8;
-  --color-bg-elevated: #ffffff;
-  --color-bg-subtle: #f3f1ed;
-  --color-text: #1a1a1a;
-  --color-text-secondary: #6b6b6b;
-  --color-text-muted: #9b9b9b;
-  --color-accent: #000000;
-  --color-accent-warm: #c4704b;
-  --color-accent-cool: #4b6584;
-  --color-accent-gold: #b8965a;
-  --color-border: #e5e3df;
-  --color-error: #d44b4b;
-  --color-success: #5a8f6b;
+@layer base {
+  :root {
+    --color-bg: #fafaf8;
+    --color-bg-elevated: #ffffff;
+    --color-bg-subtle: #f3f1ed;
+    --color-text: #1a1a1a;
+    --color-text-secondary: #6b6b6b;
+    --color-text-muted: #9b9b9b;
+    --color-accent: #000000;
+    --color-accent-warm: #c4704b;
+    --color-accent-cool: #4b6584;
+    --color-accent-gold: #b8965a;
+    --color-border: #e5e3df;
+    --color-error: #d44b4b;
+    --color-success: #5a8f6b;
 
-  --font-heading: 'Playfair Display', Georgia, serif;
-  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-display: 'Cormorant Garamond', 'Playfair Display', serif;
-}
+    --font-heading: 'Playfair Display', Georgia, serif;
+    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-display: 'Cormorant Garamond', 'Playfair Display', serif;
+  }
 
-.dark {
-  --color-bg: #0f0f0f;
-  --color-bg-elevated: #1a1a1a;
-  --color-bg-subtle: #252525;
-  --color-text: #ededeb;
-  --color-text-secondary: #a0a0a0;
-  --color-text-muted: #666666;
-  --color-accent: #ffffff;
-  --color-accent-warm: #d4845f;
-  --color-accent-cool: #6b8ba4;
-  --color-accent-gold: #ceac6e;
-  --color-border: #333333;
-  --color-error: #e06060;
-  --color-success: #6aaa7e;
-}
+  .dark {
+    --color-bg: #0f0f0f;
+    --color-bg-elevated: #1a1a1a;
+    --color-bg-subtle: #252525;
+    --color-text: #ededeb;
+    --color-text-secondary: #a0a0a0;
+    --color-text-muted: #666666;
+    --color-accent: #ffffff;
+    --color-accent-warm: #d4845f;
+    --color-accent-cool: #6b8ba4;
+    --color-accent-gold: #ceac6e;
+    --color-border: #333333;
+    --color-error: #e06060;
+    --color-success: #6aaa7e;
+  }
 
-/* ── Base ── */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+  /* ── Base ── */
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-html {
-  scroll-behavior: smooth;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  body {
+    font-family: var(--font-body);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.65;
+    transition:
+      background-color 200ms,
+      color 200ms;
+  }
 
-body {
-  font-family: var(--font-body);
-  background-color: var(--color-bg);
-  color: var(--color-text);
-  line-height: 1.65;
-  transition:
-    background-color 200ms,
-    color 200ms;
-}
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-heading);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-}
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
 }
 
 /* ── Utilities ── */
-.font-display {
-  font-family: var(--font-display);
-}
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
 
-.text-balance {
-  text-wrap: balance;
+  .text-balance {
+    text-wrap: balance;
+  }
 }

@@ -5,6 +5,13 @@ import { RouterLink } from 'vue-router'
 
 const auth = useAuthStore()
 
+const navLinks = [
+  { to: '/looks', label: 'Looks' },
+  { to: '/articles', label: 'Artículos' },
+  { to: '/trends', label: 'Tendencias' },
+  { to: '/about', label: 'Nosotros' },
+]
+
 function handleLogout() {
   auth.logout()
 }
@@ -28,7 +35,20 @@ function handleLogout() {
         LUKRA
       </RouterLink>
 
-      <!-- Navigation -->
+      <!-- Main Navigation -->
+      <div class="hidden items-center gap-8 md:flex">
+        <RouterLink
+          v-for="link in navLinks"
+          :key="link.to"
+          :to="link.to"
+          class="text-xs font-medium uppercase tracking-[0.2em] transition-opacity duration-200 hover:opacity-60"
+          style="color: var(--color-text)"
+        >
+          {{ link.label }}
+        </RouterLink>
+      </div>
+
+      <!-- Auth Actions -->
       <div class="flex items-center gap-6">
         <template v-if="auth.isAuthenticated">
           <RouterLink

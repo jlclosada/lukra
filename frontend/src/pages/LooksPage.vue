@@ -1,0 +1,146 @@
+<script setup lang="ts">
+import { looks } from '@/data/mock'
+import { Filter, Heart, X } from 'lucide-vue-next'
+import { computed, onMounted, ref } from 'vue'
+
+const activeFilter = ref<string | null>(null)
+const revealed = ref(false)
+
+const allTags = computed(() => {
+  const tags = new Set<string>()
+  looks.forEach((l) => l.tags.forEach((t) => tags.add(t)))
+  return Array.from(tags).sort()
+})
+
+const filteredLooks = computed(() => {
+  if (!activeFilter.value) return looks
+  return looks.filter((l) => l.tags.includes(activeFilter.value!))
+})
+
+function toggleFilter(tag: string) {
+  activeFilter.value = activeFilter.value === tag ? null : tag
+}
+
+onMounted(() => {
+  requestAnimationFrame(() => (revealed.value = true))
+})
+</script>
+
+<template>
+  <div>
+    <!-- Header -->
+    <section class="px-6 pb-12 pt-20 sm:px-12 lg:px-24">
+      <div
+        class="max-w-3xl transition-all duration-700"
+        :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'"
+      >
+        <p class="text-xs font-medium uppercase tracking-[0.3em]" style="color: var(--color-text-muted)">Lookbook</p>
+        <h1 class="mt-3 text-5xl font-light tracking-tight sm:text-6xl" style="font-family: var(--font-display)">Looks</h1>
+        <p class="mt-4 max-w-xl text-base leading-relaxed" style="color: var(--color-text-secondary)">
+          Inspiración visual curada por nuestra comunidad. Cada look cuenta una historia.
+        </p>
+      </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="px-6 pb-8 sm:px-12 lg:px-24">
+      <div
+        class="flex flex-wrap items-center gap-3 transition-all duration-700 delay-200"
+        :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'"
+      >
+        <Filter :size="14" style="color: var(--color-text-muted)" />
+        <button
+          v-for="tag in allTags"
+          :key="tag"
+          @click="toggleFilter(tag)"
+          class="px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider transition-all duration-200"
+          :style="{
+            backgroundColor: activeFilter === tag ? 'var(--color-accent)' : 'transparent',
+            color: activeFilter === tag ? 'var(--color-bg)' : 'var(--color-text-muted)',
+            border: activeFilter === tag ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
+          }"
+        >
+          {{ tag }}
+        </button>
+        <button
+          v-if="activeFilter"
+          @click="activeFilter = null"
+          class="flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider transition-opacity hover:opacity-70"
+          style="color: var(--color-text-muted)"
+        >
+          <X :size="12" /> Limpiar
+        </button>
+      </div>
+    </section>
+
+    <!-- Masonry Gallery -->
+    <section class="px-6 pb-24 sm:px-12 lg:px-24">
+      <div class="columns-2 gap-4 space-y-4 sm:columns-3 lg:columns-4 xl:columns-5">
+        <div
+          v-for="(look, index) in filteredLooks"
+          :key="look.id"
+          class="group relative break-inside-avoid overflow-hidden transition-all duration-500"
+          :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'"
+          :style="{ transitionDelay: `${300 + index * 60}ms` }"
+        >
+          <div
+            class="relative cursor-pointer overflow-hidden"
+            :class="{
+              'aspect-[3/4]': look.aspect === 'tall',
+              'aspect-[4/3]': look.aspect === 'wide',
+              'aspect-square': look.aspect === 'square',
+            }"
+          >
+            <img
+              :src="look.image"
+              :alt="look.title"
+              class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
+            />
+            <!-- Overlay -->
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+
+            <!-- Season badge -->
+            <div
+              class="absolute left-3 top-3 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-white/80"
+              style="background: rgba(0,0,0,0.3); backdrop-filter: blur(8px)"
+            >
+              {{ look.season }}
+            </div>
+
+            <!-- Content on hover -->
+            <div class="absolute inset-x-0 bottom-0 translate-y-4 p-5 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+              <h3 class="text-lg font-medium text-white" style="font-family: var(--font-heading)">{{ look.title }}</h3>
+              <div class="mt-2 flex items-center gap-3">
+                <img :src="look.authorAvatar" :alt="look.author" class="h-6 w-6 rounded-full object-cover" />
+                <span class="text-xs text-white/70">{{ look.author }}</span>
+              </div>
+              <div class="mt-3 flex flex-wrap gap-1.5">
+                <span
+                  v-for="tag in look.tags"
+                  :key="tag"
+                  class="px-2 py-0.5 text-[9px] uppercase tracking-wider text-white/60"
+                  style="background: rgba(255,255,255,0.1)"
+                >
+                  {{ tag }}
+                </span>
+              </div>
+              <div class="mt-3 flex items-center gap-1.5">
+                <Heart :size="13" class="text-white/70" />
+                <span class="text-xs text-white/70">{{ look.likes }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div v-if="filteredLooks.length === 0" class="py-20 text-center">
+        <p class="text-lg" style="color: var(--color-text-muted)">No hay looks con ese filtro.</p>
+        <button @click="activeFilter = null" class="mt-4 text-sm underline" style="color: var(--color-text-secondary)">
+          Ver todos
+        </button>
+      </div>
+    </section>
+  </div>
+</template>
