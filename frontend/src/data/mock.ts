@@ -1,8 +1,21 @@
 // ── Mock data for development branch ──
 
+export interface ProductHotspot {
+  id: string
+  x: number // percentage 0-100
+  y: number // percentage 0-100
+  name: string
+  brand: string
+  price: number
+  currency: string
+  productUrl: string
+  image?: string
+}
+
 export interface Look {
   id: string
   title: string
+  description?: string
   image: string
   author: string
   authorAvatar: string
@@ -10,12 +23,14 @@ export interface Look {
   likes: number
   season: string
   aspect: 'tall' | 'wide' | 'square'
+  hotspots?: ProductHotspot[]
 }
 
 export interface Article {
   id: string
   title: string
   excerpt: string
+  content?: string
   image: string
   author: string
   authorAvatar: string
@@ -23,6 +38,7 @@ export interface Article {
   readTime: number
   date: string
   featured?: boolean
+  published?: boolean
 }
 
 export interface Trend {
@@ -33,6 +49,7 @@ export interface Trend {
   tags: string[]
   season: string
   popularity: number
+  published?: boolean
 }
 
 export interface HeroSlide {
@@ -77,6 +94,7 @@ export const looks: Look[] = [
   {
     id: '1',
     title: 'Minimal Noir',
+    description: 'Un look que abraza la elegancia del negro absoluto. Prendas estructuradas con cortes limpios que definen la silueta sin esfuerzo.',
     image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80',
     author: 'María García',
     authorAvatar: 'https://i.pravatar.cc/80?img=1',
@@ -84,10 +102,17 @@ export const looks: Look[] = [
     likes: 342,
     season: 'SS26',
     aspect: 'tall',
+    hotspots: [
+      { id: 'h1', x: 45, y: 20, name: 'Blazer Oversize Lana', brand: 'COS', price: 189, currency: '€', productUrl: '/product/blazer-oversize' },
+      { id: 'h2', x: 50, y: 55, name: 'Pantalón Wide Leg', brand: 'Zara Studio', price: 79.95, currency: '€', productUrl: '/product/pantalon-wide' },
+      { id: 'h3', x: 30, y: 42, name: 'Bolso Minimal Chain', brand: 'Massimo Dutti', price: 149, currency: '€', productUrl: '/product/bolso-chain' },
+      { id: 'h4', x: 50, y: 85, name: 'Botas Chelsea Cuero', brand: 'Dr. Martens', price: 219, currency: '€', productUrl: '/product/botas-chelsea' },
+    ],
   },
   {
     id: '2',
     title: 'Urban Elegance',
+    description: 'La ciudad como pasarela. Mezcla de texturas urbanas con toques refinados que rompen las reglas sin perder la compostura.',
     image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&q=80',
     author: 'Carlos Ruiz',
     authorAvatar: 'https://i.pravatar.cc/80?img=3',
@@ -95,10 +120,16 @@ export const looks: Look[] = [
     likes: 287,
     season: 'SS26',
     aspect: 'wide',
+    hotspots: [
+      { id: 'h5', x: 48, y: 15, name: 'Gafas de Sol Cat-Eye', brand: 'Celine', price: 380, currency: '€', productUrl: '/product/gafas-celine' },
+      { id: 'h6', x: 50, y: 35, name: 'Top Seda Drapeado', brand: 'Sandro', price: 125, currency: '€', productUrl: '/product/top-seda' },
+      { id: 'h7', x: 45, y: 65, name: 'Falda Midi Plisada', brand: 'Maje', price: 195, currency: '€', productUrl: '/product/falda-midi' },
+    ],
   },
   {
     id: '3',
     title: 'Deconstructed Layers',
+    description: 'Capas que desafían la gravedad y la convención. Un ejercicio de deconstrucción donde cada prenda cuenta su propia historia.',
     image: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=800&q=80',
     author: 'Lucía Fernández',
     authorAvatar: 'https://i.pravatar.cc/80?img=5',
@@ -106,10 +137,16 @@ export const looks: Look[] = [
     likes: 456,
     season: 'AW25',
     aspect: 'tall',
+    hotspots: [
+      { id: 'h8', x: 50, y: 25, name: 'Trench Deconstruido', brand: 'Acne Studios', price: 890, currency: '€', productUrl: '/product/trench-decon' },
+      { id: 'h9', x: 35, y: 50, name: 'Jersey Asimétrico Cashmere', brand: 'The Row', price: 650, currency: '€', productUrl: '/product/jersey-asimetrico' },
+      { id: 'h10', x: 55, y: 78, name: 'Bota Tobillera Punta', brand: 'Maison Margiela', price: 720, currency: '€', productUrl: '/product/bota-tobillera' },
+    ],
   },
   {
     id: '4',
     title: 'Linen Dreams',
+    description: 'La ligereza del lino en su máxima expresión. Tonos neutros y texturas naturales para un verano sin artificios.',
     image: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=800&q=80',
     author: 'Ana López',
     authorAvatar: 'https://i.pravatar.cc/80?img=9',
@@ -117,10 +154,16 @@ export const looks: Look[] = [
     likes: 198,
     season: 'SS26',
     aspect: 'square',
+    hotspots: [
+      { id: 'h11', x: 50, y: 30, name: 'Camisa Lino Oversize', brand: 'Arket', price: 69, currency: '€', productUrl: '/product/camisa-lino' },
+      { id: 'h12', x: 45, y: 70, name: 'Pantalón Lino Palazzo', brand: 'Mango', price: 49.99, currency: '€', productUrl: '/product/pantalon-lino' },
+      { id: 'h13', x: 25, y: 48, name: 'Bolso Rafia Natural', brand: 'Loewe', price: 450, currency: '€', productUrl: '/product/bolso-rafia' },
+    ],
   },
   {
     id: '5',
     title: 'Chrome Future',
+    description: 'Metales líquidos y siluetas del mañana. Un look que fusiona la tecnología con la alta costura en una visión futurista.',
     image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80',
     author: 'Pablo Martín',
     authorAvatar: 'https://i.pravatar.cc/80?img=11',
@@ -128,10 +171,16 @@ export const looks: Look[] = [
     likes: 523,
     season: 'AW25',
     aspect: 'tall',
+    hotspots: [
+      { id: 'h14', x: 48, y: 30, name: 'Chaqueta Metalizada', brand: 'Courrèges', price: 520, currency: '€', productUrl: '/product/chaqueta-metal' },
+      { id: 'h15', x: 52, y: 60, name: 'Leggings Tech-Fabric', brand: 'Mugler', price: 290, currency: '€', productUrl: '/product/leggings-tech' },
+      { id: 'h16', x: 50, y: 88, name: 'Sneakers Plataforma', brand: 'Rick Owens', price: 680, currency: '€', productUrl: '/product/sneakers-plataforma' },
+    ],
   },
   {
     id: '6',
     title: 'Soft Power',
+    description: 'Feminidad redefinida con fuerza sutil. Tejidos fluidos y cortes precisos que empoderan sin gritar.',
     image: 'https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=800&q=80',
     author: 'María García',
     authorAvatar: 'https://i.pravatar.cc/80?img=1',
@@ -139,6 +188,10 @@ export const looks: Look[] = [
     likes: 389,
     season: 'SS26',
     aspect: 'wide',
+    hotspots: [
+      { id: 'h17', x: 50, y: 28, name: 'Blusa Satinada Bow', brand: 'Totême', price: 310, currency: '€', productUrl: '/product/blusa-satin' },
+      { id: 'h18', x: 48, y: 62, name: 'Falda Tubo Crepe', brand: 'Max Mara', price: 275, currency: '€', productUrl: '/product/falda-tubo' },
+    ],
   },
   {
     id: '7',

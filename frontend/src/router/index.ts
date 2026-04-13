@@ -50,6 +50,39 @@ const router = createRouter({
       component: () => import('@/pages/ProfilePage.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/admin',
+      component: () => import('@/pages/admin/AdminLayout.vue'),
+      meta: { requiresAuth: true, requiresEditor: true },
+      children: [
+        {
+          path: '',
+          name: 'admin-dashboard',
+          component: () => import('@/pages/admin/AdminDashboard.vue'),
+        },
+        {
+          path: 'looks',
+          name: 'admin-looks',
+          component: () => import('@/pages/admin/AdminLooks.vue'),
+        },
+        {
+          path: 'articles',
+          name: 'admin-articles',
+          component: () => import('@/pages/admin/AdminArticles.vue'),
+        },
+        {
+          path: 'trends',
+          name: 'admin-trends',
+          component: () => import('@/pages/admin/AdminTrends.vue'),
+        },
+        {
+          path: 'users',
+          name: 'admin-users',
+          component: () => import('@/pages/admin/AdminUsers.vue'),
+          meta: { requiresAdmin: true },
+        },
+      ],
+    },
   ],
 })
 
@@ -63,6 +96,10 @@ router.beforeEach(async (to, _from, next) => {
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     next({ name: 'login', query: { redirect: to.fullPath } })
+  } else if (to.meta.requiresEditor && !auth.isEditor) {
+    next({ name: 'home' })
+  } else if (to.meta.requiresAdmin && !auth.isAdmin) {
+    next({ name: 'admin-dashboard' })
   } else if (to.meta.guestOnly && auth.isAuthenticated) {
     next({ name: 'home' })
   } else {

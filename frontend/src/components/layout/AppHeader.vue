@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
-import { LogIn, LogOut, User } from 'lucide-vue-next'
+import { LogIn, LogOut, Menu, Settings, User, X } from 'lucide-vue-next'
+import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 const auth = useAuthStore()
+const mobileOpen = ref(false)
 
 const navLinks = [
   { to: '/looks', label: 'Looks' },
@@ -14,6 +16,11 @@ const navLinks = [
 
 function handleLogout() {
   auth.logout()
+  mobileOpen.value = false
+}
+
+function closeMobile() {
+  mobileOpen.value = false
 }
 </script>
 
@@ -29,7 +36,7 @@ function handleLogout() {
       <!-- Logo -->
       <RouterLink
         to="/"
-        class="text-xl font-medium tracking-[0.3em] uppercase"
+        class="text-xl font-medium tracking-[0.3em] uppercase transition-opacity duration-200 hover:opacity-60"
         style="font-family: var(--font-heading)"
       >
         LUKRA
@@ -41,19 +48,30 @@ function handleLogout() {
           v-for="link in navLinks"
           :key="link.to"
           :to="link.to"
-          class="text-xs font-medium uppercase tracking-[0.2em] transition-opacity duration-200 hover:opacity-60"
+          class="relative text-xs font-medium uppercase tracking-[0.2em] transition-opacity duration-200 hover:opacity-60 link-underline"
           style="color: var(--color-text)"
         >
           {{ link.label }}
         </RouterLink>
       </div>
 
-      <!-- Auth Actions -->
-      <div class="flex items-center gap-6">
+      <!-- Right actions -->
+      <div class="flex items-center gap-5">
+        <!-- Admin link -->
+        <RouterLink
+          v-if="auth.isEditor"
+          to="/admin"
+          class="hidden items-center gap-1.5 text-xs font-medium uppercase tracking-[0.15em] transition-all duration-200 hover:opacity-60 cursor-pointer md:flex"
+          style="color: var(--color-accent-gold)"
+        >
+          <Settings :size="14" />
+          Panel
+        </RouterLink>
+
         <template v-if="auth.isAuthenticated">
           <RouterLink
             to="/profile"
-            class="flex items-center gap-2 text-sm transition-opacity hover:opacity-70"
+            class="flex items-center gap-2 text-sm transition-opacity duration-200 hover:opacity-60 cursor-pointer"
           >
             <User :size="18" />
             <span class="hidden sm:inline">{{ auth.user?.display_name || auth.user?.username }}</span>
@@ -61,7 +79,7 @@ function handleLogout() {
 
           <span
             v-if="auth.user?.role !== 'default'"
-            class="rounded-full px-2.5 py-0.5 text-xs font-medium uppercase tracking-wider"
+            class="hidden rounded-full px-2.5 py-0.5 text-xs font-medium uppercase tracking-wider sm:inline-block"
             :style="{
               backgroundColor: auth.user?.role === 'admin' ? 'var(--color-accent-gold)' : 'var(--color-accent-cool)',
               color: '#fff',
@@ -72,7 +90,7 @@ function handleLogout() {
 
           <button
             @click="handleLogout"
-            class="flex items-center gap-1.5 text-sm transition-opacity hover:opacity-70"
+            class="flex items-center gap-1.5 text-sm transition-opacity duration-200 hover:opacity-60 cursor-pointer"
             style="color: var(--color-text-secondary)"
           >
             <LogOut :size="16" />
@@ -83,14 +101,14 @@ function handleLogout() {
         <template v-else>
           <RouterLink
             to="/login"
-            class="flex items-center gap-1.5 text-sm font-medium transition-opacity hover:opacity-70"
+            class="hidden items-center gap-1.5 text-sm font-medium transition-opacity duration-200 hover:opacity-60 cursor-pointer sm:flex"
           >
             <LogIn :size="16" />
             Entrar
           </RouterLink>
           <RouterLink
             to="/register"
-            class="rounded-none px-5 py-2 text-sm font-medium tracking-wider uppercase transition-all duration-200"
+            class="hidden rounded-none px-5 py-2 text-sm font-medium tracking-wider uppercase transition-all duration-200 cursor-pointer hover:opacity-85 sm:inline-block"
             :style="{
               backgroundColor: 'var(--color-accent)',
               color: 'var(--color-bg)',
@@ -99,7 +117,86 @@ function handleLogout() {
             Registro
           </RouterLink>
         </template>
+
+        <!-- Mobile menu toggle -->
+        <button
+          @click="mobileOpen = !mobileOpen"
+          class="flex h-10 w-10 items-center justify-center cursor-pointer transition-opacity duration-200 hover:opacity-60 md:hidden"
+        >
+          <component :is="mobileOpen ? X : Menu" :size="22" />
+        </button>
       </div>
     </nav>
+
+    <!-- Mobile menu -->
+    <Transition name="mobile-menu">
+      <div
+        v-if="mobileOpen"
+        class="border-t px-6 py-6 md:hidden"
+        :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg)' }"
+      >
+        <div class="flex flex-col gap-4">
+          <RouterLink
+            v-for="link in navLinks"
+            :key="link.to"
+            :to="link.to"
+            class="text-sm font-medium uppercase tracking-[0.15em] transition-opacity duration-200 hover:opacity-60"
+            @click="closeMobile"
+          >
+            {{ link.label }}
+          </RouterLink>
+
+          <RouterLink
+            v-if="auth.isEditor"
+            to="/admin"
+            class="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.15em] transition-opacity duration-200 hover:opacity-60"
+            style="color: var(--color-accent-gold)"
+            @click="closeMobile"
+          >
+            <Settings :size="14" />
+            Panel Admin
+          </RouterLink>
+
+          <div class="my-2 border-t" :style="{ borderColor: 'var(--color-border)' }" />
+
+          <template v-if="!auth.isAuthenticated">
+            <RouterLink to="/login" class="text-sm font-medium" @click="closeMobile">Entrar</RouterLink>
+            <RouterLink
+              to="/register"
+              class="inline-block px-5 py-2.5 text-center text-sm font-medium tracking-wider uppercase"
+              :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-bg)' }"
+              @click="closeMobile"
+            >
+              Registro
+            </RouterLink>
+          </template>
+          <template v-else>
+            <button @click="handleLogout" class="text-left text-sm cursor-pointer" style="color: var(--color-text-secondary)">
+              Cerrar sesión
+            </button>
+          </template>
+        </div>
+      </div>
+    </Transition>
   </header>
 </template>
+
+<style scoped>
+.mobile-menu-enter-active {
+  animation: slideDown 0.25s ease-out;
+}
+.mobile-menu-leave-active {
+  animation: slideDown 0.2s ease-in reverse;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>

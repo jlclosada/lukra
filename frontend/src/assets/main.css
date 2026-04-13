@@ -87,4 +87,193 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* ── Interactive states ── */
+  .clickable {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .link-underline {
+    position: relative;
+  }
+  .link-underline::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background-color: currentColor;
+    transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .link-underline:hover::after {
+    width: 100%;
+  }
+
+  /* ── Smooth image zoom ── */
+  .img-zoom {
+    overflow: hidden;
+  }
+  .img-zoom img {
+    transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .img-zoom:hover img {
+    transform: scale(1.05);
+  }
+
+  /* ── Card hover lift ── */
+  .card-hover {
+    transition:
+      transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+      box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  }
+
+  /* ── Button styles ── */
+  .btn-primary {
+    cursor: pointer;
+    background-color: var(--color-accent);
+    color: var(--color-bg);
+    transition: all 0.2s ease;
+  }
+  .btn-primary:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .btn-outline {
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    transition: all 0.2s ease;
+  }
+  .btn-outline:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .btn-ghost {
+    cursor: pointer;
+    background: transparent;
+    color: var(--color-text-secondary);
+    transition: all 0.2s ease;
+  }
+  .btn-ghost:hover {
+    color: var(--color-text);
+  }
+
+  .btn-danger {
+    cursor: pointer;
+    background-color: var(--color-error);
+    color: #fff;
+    transition: all 0.2s ease;
+  }
+  .btn-danger:hover {
+    opacity: 0.85;
+  }
+
+  /* ── Focus ring ── */
+  .focus-ring:focus-visible {
+    outline: 2px solid var(--color-accent-cool);
+    outline-offset: 2px;
+  }
+
+  /* ── Scroll reveal base ── */
+  .reveal-up {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+      transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .reveal-up.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── Pulse ring for hotspots ── */
+  .hotspot-pulse {
+    position: relative;
+  }
+  .hotspot-pulse::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.6);
+    animation: hotspotPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  /* ── Skeleton loading ── */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-bg-subtle) 25%,
+      var(--color-bg-elevated) 50%,
+      var(--color-bg-subtle) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shine 1.5s ease-in-out infinite;
+  }
+}
+
+/* ── Keyframes ── */
+@keyframes hotspotPing {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  75%,
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes skeleton-shine {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

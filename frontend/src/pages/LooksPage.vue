@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import LookModal from '@/components/LookModal.vue'
+import type { Look } from '@/data/mock'
 import { looks } from '@/data/mock'
-import { Filter, Heart, X } from 'lucide-vue-next'
+import { Eye, Filter, Heart, X } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 
 const activeFilter = ref<string | null>(null)
 const revealed = ref(false)
+const selectedLook = ref<Look | null>(null)
+const modalVisible = ref(false)
 
 const allTags = computed(() => {
   const tags = new Set<string>()
@@ -19,6 +23,18 @@ const filteredLooks = computed(() => {
 
 function toggleFilter(tag: string) {
   activeFilter.value = activeFilter.value === tag ? null : tag
+}
+
+function openLook(look: Look) {
+  selectedLook.value = look
+  modalVisible.value = true
+}
+
+function closeModal() {
+  modalVisible.value = false
+  setTimeout(() => {
+    selectedLook.value = null
+  }, 300)
 }
 
 onMounted(() => {
@@ -38,6 +54,7 @@ onMounted(() => {
         <h1 class="mt-3 text-5xl font-light tracking-tight sm:text-6xl" style="font-family: var(--font-display)">Looks</h1>
         <p class="mt-4 max-w-xl text-base leading-relaxed" style="color: var(--color-text-secondary)">
           Inspiración visual curada por nuestra comunidad. Cada look cuenta una historia.
+          <span class="text-xs italic" style="color: var(--color-text-muted)">Pulsa sobre un look para explorar las prendas.</span>
         </p>
       </div>
     </section>
@@ -53,7 +70,7 @@ onMounted(() => {
           v-for="tag in allTags"
           :key="tag"
           @click="toggleFilter(tag)"
-          class="px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider transition-all duration-200"
+          class="cursor-pointer px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider transition-all duration-200 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
           :style="{
             backgroundColor: activeFilter === tag ? 'var(--color-accent)' : 'transparent',
             color: activeFilter === tag ? 'var(--color-bg)' : 'var(--color-text-muted)',
@@ -65,7 +82,7 @@ onMounted(() => {
         <button
           v-if="activeFilter"
           @click="activeFilter = null"
-          class="flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider transition-opacity hover:opacity-70"
+          class="flex cursor-pointer items-center gap-1 px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider transition-all duration-200 hover:text-[var(--color-text)]"
           style="color: var(--color-text-muted)"
         >
           <X :size="12" /> Limpiar
@@ -90,6 +107,7 @@ onMounted(() => {
               'aspect-[4/3]': look.aspect === 'wide',
               'aspect-square': look.aspect === 'square',
             }"
+            @click="openLook(look)"
           >
             <img
               :src="look.image"
@@ -97,7 +115,8 @@ onMounted(() => {
               class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               loading="lazy"
             />
-            <!-- Overlay -->
+
+            <!-- Hover overlay -->
             <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
             <!-- Season badge -->
@@ -108,11 +127,21 @@ onMounted(() => {
               {{ look.season }}
             </div>
 
+            <!-- Hotspot indicator -->
+            <div
+              v-if="look.hotspots?.length"
+              class="absolute right-3 top-3 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-medium uppercase tracking-wider text-white opacity-0 transition-all duration-400 group-hover:opacity-100"
+              style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px)"
+            >
+              <Eye :size="11" />
+              {{ look.hotspots.length }} prendas
+            </div>
+
             <!-- Content on hover -->
             <div class="absolute inset-x-0 bottom-0 translate-y-4 p-5 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
               <h3 class="text-lg font-medium text-white" style="font-family: var(--font-heading)">{{ look.title }}</h3>
               <div class="mt-2 flex items-center gap-3">
-                <img :src="look.authorAvatar" :alt="look.author" class="h-6 w-6 rounded-full object-cover" />
+                <img :src="look.authorAvatar" :alt="look.author" class="h-6 w-6 rounded-full object-cover ring-1 ring-white/20" />
                 <span class="text-xs text-white/70">{{ look.author }}</span>
               </div>
               <div class="mt-3 flex flex-wrap gap-1.5">
@@ -120,7 +149,7 @@ onMounted(() => {
                   v-for="tag in look.tags"
                   :key="tag"
                   class="px-2 py-0.5 text-[9px] uppercase tracking-wider text-white/60"
-                  style="background: rgba(255,255,255,0.1)"
+                  style="background: rgba(255,255,255,0.1); backdrop-filter: blur(4px)"
                 >
                   {{ tag }}
                 </span>
@@ -137,10 +166,17 @@ onMounted(() => {
       <!-- Empty state -->
       <div v-if="filteredLooks.length === 0" class="py-20 text-center">
         <p class="text-lg" style="color: var(--color-text-muted)">No hay looks con ese filtro.</p>
-        <button @click="activeFilter = null" class="mt-4 text-sm underline" style="color: var(--color-text-secondary)">
+        <button
+          @click="activeFilter = null"
+          class="mt-4 cursor-pointer text-sm underline transition-opacity hover:opacity-60"
+          style="color: var(--color-text-secondary)"
+        >
           Ver todos
         </button>
       </div>
     </section>
+
+    <!-- Look modal -->
+    <LookModal :look="selectedLook" :visible="modalVisible" @close="closeModal" />
   </div>
 </template>
