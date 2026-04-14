@@ -2,6 +2,7 @@
 import { articles } from '@/data/mock'
 import { ArrowUpRight, Clock } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 
 const revealed = ref(false)
 const activeCategory = ref<string | null>(null)
@@ -73,8 +74,9 @@ onMounted(() => {
 
     <!-- Featured article -->
     <section v-if="featured" class="px-6 pb-16 sm:px-12 lg:px-24">
-      <div
-        class="group cursor-pointer transition-all duration-700 delay-300"
+      <RouterLink
+        :to="`/articles/${featured.id}`"
+        class="group block cursor-pointer transition-all duration-700 delay-300"
         :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'"
       >
         <div class="grid grid-cols-1 gap-8 lg:grid-cols-5">
@@ -118,16 +120,17 @@ onMounted(() => {
             </div>
           </div>
         </div>
-      </div>
+      </RouterLink>
     </section>
 
     <!-- Article grid -->
     <section class="px-6 pb-24 sm:px-12 lg:px-24">
       <div class="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-        <article
+        <RouterLink
           v-for="(article, index) in rest"
           :key="article.id"
-          class="group cursor-pointer transition-all duration-500"
+          :to="`/articles/${article.id}`"
+          class="group block cursor-pointer transition-all duration-500"
           :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'"
           :style="{ transitionDelay: `${400 + index * 80}ms` }"
         >
@@ -168,7 +171,7 @@ onMounted(() => {
               <span class="text-xs" style="color: var(--color-text-muted)">{{ article.readTime }} min</span>
             </div>
           </div>
-        </article>
+        </RouterLink>
       </div>
     </section>
   </div>

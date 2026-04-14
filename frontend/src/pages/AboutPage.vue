@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { useAuthStore } from '@/stores/auth'
 import { ArrowRight, Eye, Heart, Leaf, Sparkles } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
+const auth = useAuthStore()
 const revealed = ref(false)
 
 const values = [
@@ -335,6 +337,7 @@ onMounted(() => {
 
     <!-- CTA -->
     <section
+      v-if="!auth.isAuthenticated"
       class="py-24 text-center"
       style="background-color: var(--color-accent); color: var(--color-bg)"
       data-reveal

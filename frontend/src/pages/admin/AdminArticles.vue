@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RichTextEditor from '@/components/RichTextEditor.vue'
 import type { Article } from '@/data/mock'
 import { articles as mockArticles } from '@/data/mock'
 import { BookOpen, Clock, Edit3, Plus, Search, Trash2, X } from 'lucide-vue-next'
@@ -86,6 +87,47 @@ function deleteArticle(id: string) {
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+// Image upload
+const imageMode = ref<'url' | 'upload'>('url')
+const imagePreview = ref<string | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+
+function onFileSelect(e: Event) {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file || !file.type.startsWith('image/')) return
+  const reader = new FileReader()
+  reader.onload = (ev) => {
+    const result = ev.target?.result as string
+    imagePreview.value = result
+    form.value.image = result
+  }
+  reader.readAsDataURL(file)
+}
+
+function triggerFileInput() {
+  fileInput.value?.click()
+}
+
+function onImageDrop(e: DragEvent) {
+  e.preventDefault()
+  const file = e.dataTransfer?.files?.[0]
+  if (!file || !file.type.startsWith('image/')) return
+  const reader = new FileReader()
+  reader.onload = (ev) => {
+    const result = ev.target?.result as string
+    imagePreview.value = result
+    form.value.image = result
+  }
+  reader.readAsDataURL(file)
+}
+
+function removeImage() {
+  imagePreview.value = null
+  form.value.image = ''
+  if (fileInput.value) fileInput.value.value = ''
 }
 </script>
 
@@ -247,11 +289,57 @@ function formatDate(dateStr: string) {
               </div>
               <div>
                 <label class="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.15em]" style="color: var(--color-text-muted)">Contenido</label>
-                <textarea v-model="form.content" rows="6" class="w-full resize-none border px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--color-accent)]" :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg)' }" placeholder="Contenido del artículo..." />
+                <RichTextEditor v-model="form.content" />
               </div>
               <div>
-                <label class="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.15em]" style="color: var(--color-text-muted)">URL de imagen</label>
-                <input v-model="form.image" type="url" class="w-full border px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--color-accent)]" :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg)' }" placeholder="https://..." />
+                <label class="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.15em]" style="color: var(--color-text-muted)">Imagen</label>
+                <div class="mb-3 flex gap-0 border rounded-sm overflow-hidden" :style="{ borderColor: 'var(--color-border)' }">
+                  <button
+                    @click="imageMode = 'upload'"
+                    class="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-[10px] font-medium uppercase tracking-wider cursor-pointer transition-all"
+                    :style="{
+                      backgroundColor: imageMode === 'upload' ? 'var(--color-accent)' : 'transparent',
+                      color: imageMode === 'upload' ? 'var(--color-bg)' : 'var(--color-text-muted)',
+                    }"
+                  >
+                    <Upload :size="13" /> Subir archivo
+                  </button>
+                  <button
+                    @click="imageMode = 'url'"
+                    class="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-[10px] font-medium uppercase tracking-wider cursor-pointer transition-all"
+                    :style="{
+                      backgroundColor: imageMode === 'url' ? 'var(--color-accent)' : 'transparent',
+                      color: imageMode === 'url' ? 'var(--color-bg)' : 'var(--color-text-muted)',
+                    }"
+                  >
+                    <ImagePlus :size="13" /> URL
+                  </button>
+                </div>
+                <div v-if="imageMode === 'upload'">
+                  <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileSelect" />
+                  <div
+                    v-if="!imagePreview && !form.image"
+                    class="relative flex flex-col items-center justify-center border-2 border-dashed rounded-sm px-6 py-10 cursor-pointer transition-all hover:border-[var(--color-accent)] hover:bg-[var(--color-bg-subtle)]"
+                    :style="{ borderColor: 'var(--color-border)' }"
+                    @click="triggerFileInput"
+                    @dragover.prevent
+                    @drop="onImageDrop"
+                  >
+                    <Upload :size="28" style="color: var(--color-text-muted)" />
+                    <p class="mt-3 text-sm" style="color: var(--color-text-secondary)">Haz clic o arrastra una imagen</p>
+                    <p class="mt-1 text-[10px]" style="color: var(--color-text-muted)">JPG, PNG, WebP — máx. 5MB</p>
+                  </div>
+                  <div v-else class="relative">
+                    <img :src="imagePreview || form.image" class="w-full max-h-48 object-cover rounded-sm" />
+                    <button @click="removeImage" class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white cursor-pointer hover:bg-black/70"><X :size="14" /></button>
+                  </div>
+                </div>
+                <div v-else>
+                  <input v-model="form.image" type="url" class="w-full border px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--color-accent)]" :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg)' }" placeholder="https://..." />
+                  <div v-if="form.image" class="mt-2">
+                    <img :src="form.image" class="w-full max-h-32 object-cover rounded-sm" @error="($event.target as HTMLImageElement).style.display='none'" />
+                  </div>
+                </div>
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>

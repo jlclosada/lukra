@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type { HeroSlide } from '@/data/mock'
 import { articles, heroSlides, looks, trends } from '@/data/mock'
+import { useAuthStore } from '@/stores/auth'
 import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, Clock, Heart } from 'lucide-vue-next'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+
+const auth = useAuthStore()
 
 // ── Hero carousel ──
 const currentSlide = ref(0)
@@ -248,6 +251,9 @@ function formatDate(dateStr: string) {
       </div>
     </section>
 
+    <!-- ════════ BRAND MARQUEE ════════ -->
+    <BrandMarquee />
+
     <!-- ════════ ARTICLES ════════ -->
     <section id="section-articles" data-reveal class="px-6 py-24 sm:px-12 lg:px-24" :style="{ backgroundColor: 'var(--color-bg-subtle)' }">
       <div
@@ -269,7 +275,7 @@ function formatDate(dateStr: string) {
 
       <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <RouterLink
-          to="/articles"
+          :to="`/articles/${featuredArticle.id}`"
           class="group transition-all duration-700"
           :class="observedSections.has('section-articles') ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'"
           style="transition-delay: 150ms"
@@ -301,7 +307,7 @@ function formatDate(dateStr: string) {
           <RouterLink
             v-for="(article, index) in recentArticles"
             :key="article.id"
-            to="/articles"
+            :to="`/articles/${article.id}`"
             class="group flex gap-5 transition-all duration-700"
             :class="observedSections.has('section-articles') ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'"
             :style="{ transitionDelay: `${250 + index * 100}ms` }"
@@ -368,7 +374,7 @@ function formatDate(dateStr: string) {
     </section>
 
     <!-- ════════ CTA ════════ -->
-    <section class="px-6 py-24 text-center sm:px-12 lg:px-24" :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-bg)' }">
+    <section v-if="!auth.isAuthenticated" class="px-6 py-24 text-center sm:px-12 lg:px-24" :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-bg)' }">
       <p class="text-xs font-medium uppercase tracking-[0.3em] opacity-50">Únete a Lukra</p>
       <h2 class="mx-auto mt-4 max-w-2xl text-3xl font-light sm:text-4xl lg:text-5xl" style="font-family: var(--font-display)">
         Donde la moda se vive, se comparte y se reinventa
