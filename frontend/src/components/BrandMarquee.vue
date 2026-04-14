@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { api } from '@/services/api'
 import { useSiteConfigStore } from '@/stores/siteConfig'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 interface PartnerBrand {
   id: string
@@ -13,7 +13,6 @@ interface PartnerBrand {
 const config = useSiteConfigStore()
 const brands = ref<PartnerBrand[]>([])
 
-// Repeat brands enough times so the track is always wider than the viewport
 const repeatedBrands = computed(() => {
   if (brands.value.length === 0) return []
   const minItems = Math.max(8, Math.ceil(12 / brands.value.length))
@@ -26,6 +25,71 @@ const repeatedBrands = computed(() => {
   return result
 })
 
+/* ---------- JS-driven animation + drag ---------- */
+const trackRef = ref<HTMLElement | null>(null)
+let offset = 0
+let speed = 0.5 // px per frame
+let hovering = false
+let isDragging = false
+let dragStartX = 0
+let dragStartOffset = 0
+let hasDragged = false
+let rafId = 0
+
+function getHalfWidth() {
+  if (!trackRef.value) return 1
+  return trackRef.value.scrollWidth / 2
+}
+
+function wrapOffset() {
+  const half = getHalfWidth()
+  if (offset <= -half) offset += half
+  if (offset > 0) offset -= half
+}
+
+function tick() {
+  if (!isDragging && !hovering) {
+    offset -= speed
+    wrapOffset()
+  }
+  if (trackRef.value) {
+    trackRef.value.style.transform = `translateX(${offset}px)`
+  }
+  rafId = requestAnimationFrame(tick)
+}
+
+/* Mouse drag */
+function onPointerDown(e: PointerEvent) {
+  isDragging = true
+  hasDragged = false
+  dragStartX = e.clientX
+  dragStartOffset = offset
+  ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+}
+function onPointerMove(e: PointerEvent) {
+  if (!isDragging) return
+  const dx = e.clientX - dragStartX
+  if (Math.abs(dx) > 3) hasDragged = true
+  offset = dragStartOffset + dx
+  wrapOffset()
+}
+function onPointerUp(e: PointerEvent) {
+  isDragging = false
+  ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
+}
+
+/* Prevent link navigation after a drag */
+function onLinkClick(e: MouseEvent) {
+  if (hasDragged) {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+}
+
+/* Hover pause */
+function onEnter() { hovering = true }
+function onLeave() { hovering = false; isDragging = false }
+
 async function fetchPartnerBrands() {
   try {
     const data = await api<{ items: PartnerBrand[] }>('/brands/', { params: { partner: true, per_page: 100 } })
@@ -35,7 +99,11 @@ async function fetchPartnerBrands() {
   }
 }
 
-onMounted(fetchPartnerBrands)
+onMounted(() => {
+  fetchPartnerBrands()
+  rafId = requestAnimationFrame(tick)
+})
+onBeforeUnmount(() => cancelAnimationFrame(rafId))
 </script>
 
 <template>
@@ -47,13 +115,21 @@ onMounted(fetchPartnerBrands)
     </div>
 
     <!-- Marquee container -->
-    <div class="relative overflow-hidden py-4">
+    <div
+      class="marquee-container relative overflow-hidden py-4"
+      @pointerdown="onPointerDown"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerUp"
+      @mouseenter="onEnter"
+      @mouseleave="onLeave"
+    >
       <!-- Fade edges -->
       <div class="pointer-events-none absolute left-0 top-0 z-10 h-full w-32 bg-gradient-to-r from-[var(--color-bg)] to-transparent" />
       <div class="pointer-events-none absolute right-0 top-0 z-10 h-full w-32 bg-gradient-to-l from-[var(--color-bg)] to-transparent" />
 
       <!-- Scrolling track -->
-      <div class="marquee-track">
+      <div ref="trackRef" class="marquee-track">
         <div class="marquee-half flex items-center">
           <a
             v-for="item in repeatedBrands"
@@ -61,7 +137,7 @@ onMounted(fetchPartnerBrands)
             :href="item.website || '#'"
             :target="item.website ? '_blank' : undefined"
             :rel="item.website ? 'noopener noreferrer' : undefined"
-            @click="!item.website && $event.preventDefault()"
+            @click="onLinkClick"
             class="mx-10 flex shrink-0 items-center justify-center transition-all duration-300 hover:opacity-100 hover:scale-110"
             style="opacity: 0.45"
           >
@@ -111,26 +187,22 @@ onMounted(fetchPartnerBrands)
 </template>
 
 <style scoped>
+.marquee-container {
+  cursor: grab;
+  user-select: none;
+  touch-action: pan-y;
+}
+.marquee-container:active {
+  cursor: grabbing;
+}
+
 .marquee-track {
   display: flex;
   width: max-content;
-  animation: marqueeScroll 150s linear infinite;
-}
-
-.marquee-track:hover {
-  animation-play-state: paused;
+  will-change: transform;
 }
 
 .marquee-half {
   flex-shrink: 0;
-}
-
-@keyframes marqueeScroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
 }
 </style>
