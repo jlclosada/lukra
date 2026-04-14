@@ -47,7 +47,7 @@ onMounted(fetchPartnerBrands)
     </div>
 
     <!-- Marquee container -->
-    <div class="relative overflow-hidden">
+    <div class="relative overflow-hidden py-4">
       <!-- Fade edges -->
       <div class="pointer-events-none absolute left-0 top-0 z-10 h-full w-32 bg-gradient-to-r from-[var(--color-bg)] to-transparent" />
       <div class="pointer-events-none absolute right-0 top-0 z-10 h-full w-32 bg-gradient-to-l from-[var(--color-bg)] to-transparent" />
