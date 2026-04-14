@@ -1,24 +1,48 @@
 <script setup lang="ts">
 import LookModal from '@/components/LookModal.vue'
 import type { Look } from '@/data/mock'
-import { looks } from '@/data/mock'
-import { Eye, Filter, Heart, X } from 'lucide-vue-next'
-import { computed, onMounted, ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useLooksStore } from '@/stores/looks'
+import { useUserActivityStore } from '@/stores/userActivity'
+import { Bookmark, Eye, Heart, Search, X } from 'lucide-vue-next'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const auth = useAuthStore()
+const activity = useUserActivityStore()
+const looksStore = useLooksStore()
 
 const activeFilter = ref<string | null>(null)
+const searchQuery = ref('')
 const revealed = ref(false)
 const selectedLook = ref<Look | null>(null)
 const modalVisible = ref(false)
+const showAllTags = ref(false)
 
-const allTags = computed(() => {
-  const tags = new Set<string>()
-  looks.forEach((l) => l.tags.forEach((t) => tags.add(t)))
-  return Array.from(tags).sort()
+const allTags = computed(() => looksStore.allTags)
+
+const visibleTags = computed(() => {
+  if (showAllTags.value) return allTags.value
+  return allTags.value.slice(0, 6)
 })
 
 const filteredLooks = computed(() => {
-  if (!activeFilter.value) return looks
-  return looks.filter((l) => l.tags.includes(activeFilter.value!))
+  let result = looksStore.looks
+  if (activeFilter.value) {
+    result = result.filter((l) => l.tags.includes(activeFilter.value!))
+  }
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    result = result.filter(
+      (l) =>
+        l.title.toLowerCase().includes(q) ||
+        l.author.toLowerCase().includes(q) ||
+        l.tags.some((t) => t.toLowerCase().includes(q)) ||
+        l.season.toLowerCase().includes(q),
+    )
+  }
+  return result
 })
 
 function toggleFilter(tag: string) {
@@ -39,6 +63,20 @@ function closeModal() {
 
 onMounted(() => {
   requestAnimationFrame(() => (revealed.value = true))
+  // Auto-open look from route param
+  const id = route.params.id as string | undefined
+  if (id) {
+    const look = looksStore.getById(id)
+    if (look) openLook(look)
+  }
+})
+
+// Watch for route changes (e.g. navigating between looks)
+watch(() => route.params.id, (id) => {
+  if (id) {
+    const look = looksStore.getById(id as string)
+    if (look) openLook(look)
+  }
 })
 </script>
 
@@ -59,34 +97,73 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- Filters -->
+    <!-- Search & Filters -->
     <section class="px-6 pb-8 sm:px-12 lg:px-24">
       <div
-        class="flex flex-wrap items-center gap-3 transition-all duration-700 delay-200"
+        class="transition-all duration-700 delay-200"
         :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'"
       >
-        <Filter :size="14" style="color: var(--color-text-muted)" />
-        <button
-          v-for="tag in allTags"
-          :key="tag"
-          @click="toggleFilter(tag)"
-          class="cursor-pointer px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider transition-all duration-200 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-          :style="{
-            backgroundColor: activeFilter === tag ? 'var(--color-accent)' : 'transparent',
-            color: activeFilter === tag ? 'var(--color-bg)' : 'var(--color-text-muted)',
-            border: activeFilter === tag ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
-          }"
+        <!-- Search bar -->
+        <div
+          class="flex items-center gap-3 border px-4 py-3 mb-5"
+          :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-elevated)' }"
         >
-          {{ tag }}
-        </button>
-        <button
-          v-if="activeFilter"
-          @click="activeFilter = null"
-          class="flex cursor-pointer items-center gap-1 px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider transition-all duration-200 hover:text-[var(--color-text)]"
-          style="color: var(--color-text-muted)"
-        >
-          <X :size="12" /> Limpiar
-        </button>
+          <Search :size="16" style="color: var(--color-text-muted)" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Buscar looks, marcas, estilos..."
+            class="w-full bg-transparent text-sm outline-none placeholder:text-[var(--color-text-muted)]"
+          />
+          <button
+            v-if="searchQuery"
+            @click="searchQuery = ''"
+            class="cursor-pointer transition-opacity hover:opacity-60"
+          >
+            <X :size="14" style="color: var(--color-text-muted)" />
+          </button>
+        </div>
+
+        <!-- Tag filters -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            v-for="tag in visibleTags"
+            :key="tag"
+            @click="toggleFilter(tag)"
+            class="cursor-pointer px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider transition-all duration-200 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+            :style="{
+              backgroundColor: activeFilter === tag ? 'var(--color-accent)' : 'transparent',
+              color: activeFilter === tag ? 'var(--color-bg)' : 'var(--color-text-muted)',
+              border: activeFilter === tag ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
+            }"
+          >
+            {{ tag }}
+          </button>
+          <button
+            v-if="allTags.length > 6 && !showAllTags"
+            @click="showAllTags = true"
+            class="cursor-pointer px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider transition-all duration-200 hover:text-[var(--color-text)]"
+            style="color: var(--color-text-muted); border: 1px dashed var(--color-border)"
+          >
+            +{{ allTags.length - 6 }} más
+          </button>
+          <button
+            v-if="showAllTags && allTags.length > 6"
+            @click="showAllTags = false"
+            class="cursor-pointer px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider transition-all duration-200 hover:text-[var(--color-text)]"
+            style="color: var(--color-text-muted)"
+          >
+            Ver menos
+          </button>
+          <button
+            v-if="activeFilter"
+            @click="activeFilter = null"
+            class="flex cursor-pointer items-center gap-1 px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider transition-all duration-200 hover:text-[var(--color-text)]"
+            style="color: var(--color-text-muted)"
+          >
+            <X :size="12" /> Limpiar
+          </button>
+        </div>
       </div>
     </section>
 
@@ -157,6 +234,23 @@ onMounted(() => {
               <div class="mt-3 flex items-center gap-1.5">
                 <Heart :size="13" class="text-white/70" />
                 <span class="text-xs text-white/70">{{ look.likes }}</span>
+              </div>
+              <!-- Like / Save buttons -->
+              <div v-if="auth.isAuthenticated" class="mt-3 flex items-center gap-3">
+                <button
+                  @click.stop="activity.toggleLike(look.id, 'look')"
+                  class="flex items-center gap-1.5 text-xs transition-all duration-200 cursor-pointer"
+                  :class="activity.isLiked(look.id, 'look') ? 'text-red-400' : 'text-white/70 hover:text-red-400'"
+                >
+                  <Heart :size="15" :fill="activity.isLiked(look.id, 'look') ? 'currentColor' : 'none'" />
+                </button>
+                <button
+                  @click.stop="activity.toggleSave(look.id, 'look')"
+                  class="flex items-center gap-1.5 text-xs transition-all duration-200 cursor-pointer"
+                  :class="activity.isSaved(look.id, 'look') ? 'text-amber-400' : 'text-white/70 hover:text-amber-400'"
+                >
+                  <Bookmark :size="15" :fill="activity.isSaved(look.id, 'look') ? 'currentColor' : 'none'" />
+                </button>
               </div>
             </div>
           </div>

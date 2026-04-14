@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { trends } from '@/data/mock'
+import { useTrendsStore } from '@/stores/trends'
 import { ArrowUpRight, TrendingUp } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
+
+const trendsStore = useTrendsStore()
+const trends = trendsStore.publishedTrends
 
 const revealed = ref(false)
 
@@ -32,11 +36,11 @@ onMounted(() => {
         <article
           v-for="(trend, index) in trends"
           :key="trend.id"
-          class="group cursor-pointer border-t transition-all duration-500"
+          class="group border-t transition-all duration-500"
           :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'"
           :style="{ borderColor: 'var(--color-border)', transitionDelay: `${200 + index * 100}ms` }"
         >
-          <div class="grid grid-cols-1 items-center gap-6 py-10 lg:grid-cols-12 lg:gap-12">
+          <RouterLink :to="`/trends/${trend.id}`" class="grid grid-cols-1 items-center gap-6 py-10 lg:grid-cols-12 lg:gap-12">
             <!-- Number -->
             <div class="lg:col-span-1">
               <span
@@ -111,7 +115,7 @@ onMounted(() => {
                 style="color: var(--color-text-secondary)"
               />
             </div>
-          </div>
+          </RouterLink>
         </article>
 
         <!-- Bottom border -->

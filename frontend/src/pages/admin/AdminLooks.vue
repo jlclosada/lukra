@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import type { Look } from '@/data/mock'
-import { looks as mockLooks } from '@/data/mock'
-import { Camera, Edit3, Heart, ImagePlus, Plus, Search, Trash2, Upload, X } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
+import type { Look, ProductHotspot } from '@/data/mock'
+import { api } from '@/services/api'
+import { useLooksStore } from '@/stores/looks'
+import { Camera, Edit3, Heart, ImagePlus, MapPin, Plus, Search, Trash2, Upload, X } from 'lucide-vue-next'
+import { computed, onMounted, ref } from 'vue'
 
-// Local mutable copy of looks
-const allLooks = ref<Look[]>([...mockLooks])
+interface ApiBrand {
+  id: string
+  name: string
+  logo_url: string | null
+  website: string | null
+}
+
+const looksStore = useLooksStore()
+const allLooks = computed(() => looksStore.looks)
 const searchQuery = ref('')
 const showForm = ref(false)
 const editingLook = ref<Look | null>(null)
@@ -18,10 +26,44 @@ const form = ref({
   image: '',
   author: '',
   authorAvatar: '',
-  tags: '',
+  tags: [] as string[],
   season: 'SS26',
   aspect: 'tall' as 'tall' | 'wide' | 'square',
 })
+
+// Tag input
+const tagInput = ref('')
+const showTagSuggestions = ref(false)
+const existingTags = computed(() => looksStore.allTags)
+const filteredTagSuggestions = computed(() => {
+  if (!tagInput.value) return existingTags.value.filter(t => !form.value.tags.includes(t))
+  const q = tagInput.value.toLowerCase()
+  return existingTags.value.filter(t => t.toLowerCase().includes(q) && !form.value.tags.includes(t))
+})
+
+function addTag(tag: string) {
+  const trimmed = tag.trim().toLowerCase()
+  if (trimmed && !form.value.tags.includes(trimmed)) {
+    form.value.tags.push(trimmed)
+  }
+  tagInput.value = ''
+  showTagSuggestions.value = false
+}
+
+function removeTag(tag: string) {
+  form.value.tags = form.value.tags.filter(t => t !== tag)
+}
+
+function onTagInputKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault()
+    if (tagInput.value.trim()) {
+      addTag(tagInput.value)
+    }
+  } else if (e.key === 'Backspace' && !tagInput.value && form.value.tags.length > 0) {
+    form.value.tags.pop()
+  }
+}
 
 const filteredLooks = computed(() => {
   if (!searchQuery.value) return allLooks.value
@@ -36,7 +78,8 @@ const filteredLooks = computed(() => {
 
 function openCreate() {
   editingLook.value = null
-  form.value = { title: '', description: '', image: '', author: '', authorAvatar: '', tags: '', season: 'SS26', aspect: 'tall' }
+  form.value = { title: '', description: '', image: '', author: '', authorAvatar: '', tags: [], season: 'SS26', aspect: 'tall' }
+  tagInput.value = ''
   showForm.value = true
 }
 
@@ -48,37 +91,30 @@ function openEdit(look: Look) {
     image: look.image,
     author: look.author,
     authorAvatar: look.authorAvatar,
-    tags: look.tags.join(', '),
+    tags: [...look.tags],
     season: look.season,
     aspect: look.aspect,
   }
+  tagInput.value = ''
   showForm.value = true
 }
 
 function saveLook() {
   const tags = form.value.tags
-    .split(',')
-    .map((t) => t.trim())
-    .filter(Boolean)
 
   if (editingLook.value) {
-    const idx = allLooks.value.findIndex((l) => l.id === editingLook.value!.id)
-    if (idx !== -1) {
-      allLooks.value[idx] = {
-        ...allLooks.value[idx],
-        title: form.value.title,
-        description: form.value.description,
-        image: form.value.image,
-        author: form.value.author,
-        authorAvatar: form.value.authorAvatar,
-        tags,
-        season: form.value.season,
-        aspect: form.value.aspect,
-      }
-    }
+    looksStore.updateLook(editingLook.value.id, {
+      title: form.value.title,
+      description: form.value.description,
+      image: form.value.image,
+      author: form.value.author,
+      authorAvatar: form.value.authorAvatar,
+      tags,
+      season: form.value.season,
+      aspect: form.value.aspect,
+    })
   } else {
-    allLooks.value.unshift({
-      id: String(Date.now()),
+    looksStore.addLook({
       title: form.value.title,
       description: form.value.description,
       image: form.value.image || 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80',
@@ -94,7 +130,7 @@ function saveLook() {
 }
 
 function deleteLook(id: string) {
-  allLooks.value = allLooks.value.filter((l) => l.id !== id)
+  looksStore.deleteLook(id)
   confirmDelete.value = null
 }
 
@@ -152,6 +188,47 @@ const editingHotspots = ref<ProductHotspot[]>([])
 const selectedHotspotId = ref<string | null>(null)
 const hotspotImageRef = ref<HTMLImageElement | null>(null)
 const hotspotForm = ref({ name: '', brand: '', price: 0, currency: '€', productUrl: '' })
+
+// Brand search for hotspots
+const allBrands = ref<ApiBrand[]>([])
+const brandSearch = ref('')
+const showBrandDropdown = ref(false)
+
+const filteredBrands = computed(() => {
+  if (!brandSearch.value) return allBrands.value
+  const q = brandSearch.value.toLowerCase()
+  return allBrands.value.filter(b => b.name.toLowerCase().includes(q))
+})
+
+async function fetchBrands() {
+  try {
+    const data = await api<{ items: ApiBrand[] }>('/brands/', { params: { per_page: 100 } })
+    allBrands.value = data.items
+  } catch {
+    // Backend not available — extract brands from existing hotspots
+    const brandSet = new Map<string, ApiBrand>()
+    looksStore.looks.forEach(l => {
+      l.hotspots?.forEach(h => {
+        if (h.brand && !brandSet.has(h.brand)) {
+          brandSet.set(h.brand, { id: h.brand, name: h.brand, logo_url: null, website: null })
+        }
+      })
+    })
+    allBrands.value = Array.from(brandSet.values())
+  }
+}
+
+function selectBrand(brand: ApiBrand) {
+  hotspotForm.value.brand = brand.name
+  if (brand.website) {
+    hotspotForm.value.productUrl = brand.website
+  }
+  brandSearch.value = ''
+  showBrandDropdown.value = false
+  updateSelectedHotspot()
+}
+
+onMounted(fetchBrands)
 
 function openHotspotEditor(look: Look) {
   hotspotEditorLook.value = look
@@ -233,10 +310,9 @@ function startDrag(id: string, e: MouseEvent) {
 
 function saveHotspots() {
   if (hotspotEditorLook.value) {
-    const idx = allLooks.value.findIndex(l => l.id === hotspotEditorLook.value!.id)
-    if (idx !== -1) {
-      allLooks.value[idx] = { ...allLooks.value[idx], hotspots: [...editingHotspots.value] }
-    }
+    looksStore.updateLook(hotspotEditorLook.value.id, {
+      hotspots: editingHotspots.value.map(h => ({ ...h })),
+    })
   }
   showHotspotEditor.value = false
 }
@@ -541,14 +617,54 @@ function saveHotspots() {
                 </div>
               </div>
               <div>
-                <label class="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.15em]" style="color: var(--color-text-muted)">Tags (separados por coma)</label>
-                <input
-                  v-model="form.tags"
-                  type="text"
-                  class="w-full border px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--color-accent)]"
-                  :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg)' }"
-                  placeholder="minimal, noir, streetwear"
-                />
+                <label class="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.15em]" style="color: var(--color-text-muted)">Tags</label>
+                <div class="relative">
+                  <div
+                    class="flex flex-wrap items-center gap-1.5 border px-3 py-2 min-h-[42px] cursor-text"
+                    :style="{ borderColor: showTagSuggestions ? 'var(--color-accent)' : 'var(--color-border)', backgroundColor: 'var(--color-bg)' }"
+                    @click="($refs.tagInputRef as HTMLInputElement)?.focus()"
+                  >
+                    <span
+                      v-for="tag in form.tags"
+                      :key="tag"
+                      class="inline-flex items-center gap-1 border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider"
+                      :style="{ borderColor: 'var(--color-accent)', color: 'var(--color-accent)', backgroundColor: 'color-mix(in srgb, var(--color-accent) 8%, transparent)' }"
+                    >
+                      {{ tag }}
+                      <button @click.stop="removeTag(tag)" class="cursor-pointer hover:opacity-60">
+                        <X :size="10" />
+                      </button>
+                    </span>
+                    <input
+                      ref="tagInputRef"
+                      v-model="tagInput"
+                      type="text"
+                      placeholder="Escribe un tag..."
+                      class="flex-1 min-w-[100px] bg-transparent text-sm outline-none placeholder:text-[var(--color-text-muted)]"
+                      @keydown="onTagInputKeydown"
+                      @focus="showTagSuggestions = true"
+                      @blur="setTimeout(() => showTagSuggestions = false, 200)"
+                    />
+                  </div>
+                  <!-- Tag suggestions dropdown -->
+                  <div
+                    v-if="showTagSuggestions && filteredTagSuggestions.length > 0"
+                    class="absolute left-0 right-0 z-20 mt-1 border rounded-sm overflow-hidden shadow-lg"
+                    :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-elevated)' }"
+                  >
+                    <div class="max-h-36 overflow-y-auto">
+                      <button
+                        v-for="tag in filteredTagSuggestions"
+                        :key="tag"
+                        @mousedown.prevent="addTag(tag)"
+                        class="flex w-full items-center px-3 py-2 text-left text-xs uppercase tracking-wider cursor-pointer transition-colors hover:bg-[var(--color-bg-subtle)]"
+                        style="color: var(--color-text-secondary)"
+                      >
+                        {{ tag }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -702,8 +818,46 @@ function saveHotspots() {
                   <div>
                     <input v-model="hotspotForm.name" @input="updateSelectedHotspot" type="text" placeholder="Nombre de la prenda" class="w-full border px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]" :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg)' }" />
                   </div>
-                  <div>
-                    <input v-model="hotspotForm.brand" @input="updateSelectedHotspot" type="text" placeholder="Marca" class="w-full border px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]" :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg)' }" />
+                  <div class="relative">
+                    <!-- Brand: selected state -->
+                    <div v-if="hotspotForm.brand" class="flex items-center gap-2 border px-3 py-2" :style="{ borderColor: 'var(--color-accent)', backgroundColor: 'var(--color-bg)' }">
+                      <span class="text-sm flex-1 truncate">{{ hotspotForm.brand }}</span>
+                      <button @click="hotspotForm.brand = ''; updateSelectedHotspot()" class="cursor-pointer shrink-0 transition-opacity hover:opacity-60">
+                        <X :size="12" style="color: var(--color-text-muted)" />
+                      </button>
+                    </div>
+                    <!-- Brand: search state -->
+                    <div v-else>
+                      <div class="flex items-center gap-2 border px-3 py-2" :style="{ borderColor: showBrandDropdown ? 'var(--color-accent)' : 'var(--color-border)', backgroundColor: 'var(--color-bg)' }">
+                        <Search :size="12" style="color: var(--color-text-muted)" />
+                        <input
+                          v-model="brandSearch"
+                          type="text"
+                          placeholder="Buscar marca..."
+                          class="w-full bg-transparent text-sm outline-none placeholder:text-[var(--color-text-muted)]"
+                          @focus="showBrandDropdown = true"
+                          @blur="setTimeout(() => showBrandDropdown = false, 200)"
+                        />
+                      </div>
+                      <div v-if="showBrandDropdown" class="absolute left-0 right-0 z-30 mt-1 border rounded-sm overflow-hidden shadow-lg" :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-elevated)' }">
+                        <div v-if="filteredBrands.length === 0" class="px-3 py-3 text-center">
+                          <p class="text-[10px]" style="color: var(--color-text-muted)">No hay marcas. Regístralas en Marcas.</p>
+                        </div>
+                        <div v-else class="max-h-32 overflow-y-auto">
+                          <button
+                            v-for="b in filteredBrands"
+                            :key="b.id"
+                            @mousedown.prevent="selectBrand(b)"
+                            class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm cursor-pointer transition-colors hover:bg-[var(--color-bg-subtle)]"
+                          >
+                            <div v-if="b.logo_url" class="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm overflow-hidden" :style="{ backgroundColor: 'var(--color-bg-subtle)' }">
+                              <img :src="b.logo_url" class="h-full w-full object-contain" />
+                            </div>
+                            <span class="truncate">{{ b.name }}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <div class="grid grid-cols-2 gap-3">
                     <input v-model.number="hotspotForm.price" @input="updateSelectedHotspot" type="number" placeholder="Precio" class="w-full border px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]" :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg)' }" />

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
+import { useSiteConfigStore } from '@/stores/siteConfig'
 import { ArrowRight, Eye, Heart, Leaf, Sparkles } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 const auth = useAuthStore()
+const config = useSiteConfigStore()
 const revealed = ref(false)
 
 const values = [
@@ -31,33 +33,6 @@ const values = [
     title: 'Sostenibilidad',
     description:
       'Promovemos una moda consciente. Destacamos marcas y prácticas sostenibles porque el futuro de la moda debe ser responsable.',
-  },
-]
-
-const team = [
-  {
-    name: 'Sofía Martínez',
-    role: 'Directora Creativa',
-    avatar: 'https://i.pravatar.cc/300?img=1',
-    quote: 'La moda no es solo ropa, es la armadura con la que enfrentas el mundo.',
-  },
-  {
-    name: 'Carlos Vega',
-    role: 'Editor Jefe',
-    avatar: 'https://i.pravatar.cc/300?img=3',
-    quote: 'Cada tendencia cuenta una historia. Nosotros la narramos.',
-  },
-  {
-    name: 'Lucía Chen',
-    role: 'Directora de Tendencias',
-    avatar: 'https://i.pravatar.cc/300?img=5',
-    quote: 'El estilo es instinto, pero se puede educar el ojo.',
-  },
-  {
-    name: 'Andrés Ruiz',
-    role: 'Director de Tecnología',
-    avatar: 'https://i.pravatar.cc/300?img=8',
-    quote: 'La tecnología al servicio de la belleza y la creatividad.',
   },
 ]
 
@@ -89,9 +64,9 @@ onMounted(() => {
 <template>
   <main class="min-h-screen" style="background-color: var(--color-bg); color: var(--color-text)">
     <!-- Hero -->
-    <section class="relative h-[70vh] min-h-[500px] overflow-hidden">
+    <section v-if="config.isSectionVisible('about-hero')" class="relative h-[70vh] min-h-[500px] overflow-hidden">
       <img
-        src="https://images.unsplash.com/photo-1558171813-4c088753af8f?w=1600&q=80"
+        :src="config.aboutHero.image"
         alt="Lukra — About"
         class="absolute inset-0 h-full w-full object-cover"
       />
@@ -108,20 +83,19 @@ onMounted(() => {
           style="font-family: var(--font-heading)"
           :class="{ 'animate-fade-in-up-delay': revealed }"
         >
-          Donde la moda <br /><span class="italic">cobra vida</span>
+          {{ config.aboutHero.title }}
         </h1>
         <p
           class="mt-6 max-w-xl text-base leading-relaxed text-white/70 opacity-0 sm:text-lg"
           :class="{ 'animate-fade-in-up-delay-2': revealed }"
         >
-          Lukra es más que una plataforma. Es un espacio donde la inspiración,
-          la creatividad y la innovación convergen para redefinir cómo experimentamos la moda.
+          {{ config.aboutHero.subtitle }}
         </p>
       </div>
     </section>
 
     <!-- Mission -->
-    <section class="mx-auto max-w-4xl px-6 py-24 text-center" data-reveal>
+    <section v-if="config.isSectionVisible('about-mission')" class="mx-auto max-w-4xl px-6 py-24 text-center" data-reveal>
       <p
         class="mb-3 text-xs font-medium uppercase tracking-[0.3em]"
         style="color: var(--color-accent-warm)"
@@ -146,6 +120,7 @@ onMounted(() => {
 
     <!-- Values -->
     <section
+      v-if="config.isSectionVisible('about-values')"
       class="py-24"
       style="background-color: var(--color-bg-subtle)"
     >
@@ -201,7 +176,7 @@ onMounted(() => {
     </section>
 
     <!-- Editorial Quote -->
-    <section class="py-20 px-6 text-center" data-reveal>
+    <section v-if="config.isSectionVisible('about-quote')" class="py-20 px-6 text-center" data-reveal>
       <blockquote class="mx-auto max-w-3xl">
         <p
           class="text-2xl font-light italic leading-relaxed sm:text-3xl lg:text-4xl"
@@ -220,6 +195,7 @@ onMounted(() => {
 
     <!-- Timeline -->
     <section
+      v-if="config.isSectionVisible('about-timeline')"
       class="py-24"
       style="background-color: var(--color-bg-subtle)"
     >
@@ -280,7 +256,7 @@ onMounted(() => {
     </section>
 
     <!-- Team -->
-    <section class="py-24">
+    <section v-if="config.isSectionVisible('about-team')" class="py-24">
       <div class="mx-auto max-w-6xl px-6">
         <div class="mb-16 text-center" data-reveal>
           <p
@@ -299,7 +275,7 @@ onMounted(() => {
 
         <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div
-            v-for="(member, idx) in team"
+            v-for="(member, idx) in config.team"
             :key="member.name"
             class="group text-center"
             data-reveal
@@ -337,7 +313,7 @@ onMounted(() => {
 
     <!-- CTA -->
     <section
-      v-if="!auth.isAuthenticated"
+      v-if="!auth.isAuthenticated && config.isSectionVisible('about-cta')"
       class="py-24 text-center"
       style="background-color: var(--color-accent); color: var(--color-bg)"
       data-reveal

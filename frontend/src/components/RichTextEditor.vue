@@ -30,7 +30,7 @@ import {
     Underline as UnderlineIcon,
     Undo,
 } from 'lucide-vue-next'
-import { watch } from 'vue'
+import { ref, watch } from 'vue'
 
 const props = defineProps<{
   modelValue: string
@@ -39,6 +39,12 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
+
+// Inline popover state (replaces window.prompt which closes modals)
+const showImageInput = ref(false)
+const showLinkInput = ref(false)
+const imageUrl = ref('')
+const linkUrl = ref('')
 
 const editor = useEditor({
   content: props.modelValue,
@@ -68,22 +74,35 @@ watch(
 )
 
 function addImage() {
-  const url = window.prompt('URL de la imagen:')
-  if (url && editor.value) {
-    editor.value.chain().focus().setImage({ src: url }).run()
+  imageUrl.value = ''
+  showImageInput.value = true
+  showLinkInput.value = false
+}
+
+function confirmImage() {
+  if (imageUrl.value && editor.value) {
+    editor.value.chain().focus().setImage({ src: imageUrl.value }).run()
   }
+  showImageInput.value = false
+  imageUrl.value = ''
 }
 
 function addLink() {
   if (!editor.value) return
-  const previousUrl = editor.value.getAttributes('link').href
-  const url = window.prompt('URL del enlace:', previousUrl)
-  if (url === null) return
-  if (url === '') {
+  linkUrl.value = editor.value.getAttributes('link').href || ''
+  showLinkInput.value = true
+  showImageInput.value = false
+}
+
+function confirmLink() {
+  if (!editor.value) return
+  if (linkUrl.value === '') {
     editor.value.chain().focus().extendMarkRange('link').unsetLink().run()
-    return
+  } else {
+    editor.value.chain().focus().extendMarkRange('link').setLink({ href: linkUrl.value }).run()
   }
-  editor.value.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+  showLinkInput.value = false
+  linkUrl.value = ''
 }
 
 function addImageFromFile() {
@@ -162,6 +181,38 @@ function addImageFromFile() {
       </button>
     </div>
 
+    <!-- Inline URL input for image -->
+    <div v-if="showImageInput" class="flex items-center gap-2 border-b px-3 py-2" :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-subtle)' }">
+      <ImageIcon :size="14" style="color: var(--color-text-muted)" />
+      <input
+        v-model="imageUrl"
+        type="url"
+        placeholder="URL de la imagen..."
+        class="flex-1 bg-transparent text-sm outline-none"
+        autofocus
+        @keydown.enter="confirmImage"
+        @keydown.escape="showImageInput = false"
+      />
+      <button @click="confirmImage" class="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider cursor-pointer btn-primary rounded-sm">Insertar</button>
+      <button @click="showImageInput = false" class="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider cursor-pointer btn-ghost rounded-sm">Cancelar</button>
+    </div>
+
+    <!-- Inline URL input for link -->
+    <div v-if="showLinkInput" class="flex items-center gap-2 border-b px-3 py-2" :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-subtle)' }">
+      <LinkIcon :size="14" style="color: var(--color-text-muted)" />
+      <input
+        v-model="linkUrl"
+        type="url"
+        placeholder="URL del enlace..."
+        class="flex-1 bg-transparent text-sm outline-none"
+        autofocus
+        @keydown.enter="confirmLink"
+        @keydown.escape="showLinkInput = false"
+      />
+      <button @click="confirmLink" class="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider cursor-pointer btn-primary rounded-sm">Aplicar</button>
+      <button @click="showLinkInput = false" class="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider cursor-pointer btn-ghost rounded-sm">Cancelar</button>
+    </div>
+
     <!-- Editor content -->
     <EditorContent :editor="editor" class="editor-content" />
   </div>
@@ -199,19 +250,18 @@ function addImageFromFile() {
 }
 
 .editor-content {
-  min-height: 250px;
-  max-height: 500px;
+  min-height: 400px;
   overflow-y: auto;
   background-color: var(--color-bg);
 }
 
 .editor-content :deep(.tiptap) {
-  padding: 1rem 1.25rem;
-  min-height: 250px;
+  padding: 1.5rem 2rem;
+  min-height: 400px;
   outline: none;
   font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.8;
+  font-size: 16px;
+  line-height: 1.9;
   color: var(--color-text);
 }
 

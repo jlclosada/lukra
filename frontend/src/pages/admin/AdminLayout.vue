@@ -8,8 +8,10 @@ import {
     Home,
     LayoutDashboard,
     LogOut,
+    Settings,
+    ShoppingBag,
     TrendingUp,
-    Users,
+    Users
 } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
@@ -25,9 +27,11 @@ const navItems = computed(() => {
     { to: '/admin/looks', label: 'Looks', icon: Camera, exact: false },
     { to: '/admin/articles', label: 'Artículos', icon: BookOpen, exact: false },
     { to: '/admin/trends', label: 'Tendencias', icon: TrendingUp, exact: false },
+    { to: '/admin/brands', label: 'Marcas', icon: ShoppingBag, exact: false },
   ]
   if (auth.isAdmin) {
     items.push({ to: '/admin/users', label: 'Usuarios', icon: Users, exact: false })
+    items.push({ to: '/admin/settings', label: 'Configuración', icon: Settings, exact: false })
   }
   return items
 })

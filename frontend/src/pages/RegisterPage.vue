@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
 import { AlertCircle, ArrowRight, Check, Eye, EyeOff, X } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -15,6 +15,11 @@ const confirmPassword = ref('')
 const showPassword = ref(false)
 const formError = ref('')
 const step = ref<1 | 2>(1)
+const revealed = ref(false)
+
+onMounted(() => {
+  requestAnimationFrame(() => (revealed.value = true))
+})
 
 // Password validation
 const hasMinLength = computed(() => password.value.length >= 8)
@@ -63,7 +68,10 @@ async function handleRegister() {
     <div class="flex w-full lg:w-1/2 items-center justify-center px-6 py-12">
       <div class="w-full max-w-md">
         <!-- Brand -->
-        <div class="mb-12 text-center">
+        <div
+          class="mb-12 text-center transition-all duration-700"
+          :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'"
+        >
           <h1
             class="text-4xl font-medium tracking-[0.2em] uppercase"
             style="font-family: var(--font-heading)"
@@ -76,7 +84,11 @@ async function handleRegister() {
         </div>
 
         <!-- Step indicator -->
-        <div class="mb-10 flex items-center justify-center gap-3">
+        <div
+          class="mb-10 flex items-center justify-center gap-3 transition-all duration-700"
+          :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'"
+          style="transition-delay: 50ms"
+        >
           <div
             class="flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition-all"
             :style="{
@@ -115,7 +127,11 @@ async function handleRegister() {
 
         <!-- Step 1: Account details -->
         <form v-if="step === 1" @submit.prevent="nextStep" class="space-y-6">
-          <div>
+          <div
+            class="transition-all duration-700"
+            :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'"
+            style="transition-delay: 100ms"
+          >
             <label
               class="mb-2 block text-xs font-medium uppercase tracking-widest"
               style="color: var(--color-text-secondary)"
@@ -128,12 +144,16 @@ async function handleRegister() {
               required
               autocomplete="email"
               placeholder="tu@email.com"
-              class="w-full border-b-2 bg-transparent px-0 py-3 text-base outline-none transition-colors focus:border-current placeholder:opacity-40"
+              class="register-input w-full border-b-2 bg-transparent px-0 py-3 text-base outline-none transition-all duration-300 placeholder:opacity-40"
               :style="{ borderColor: 'var(--color-border)' }"
             />
           </div>
 
-          <div>
+          <div
+            class="transition-all duration-700"
+            :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'"
+            style="transition-delay: 200ms"
+          >
             <label
               class="mb-2 block text-xs font-medium uppercase tracking-widest"
               style="color: var(--color-text-secondary)"
@@ -146,7 +166,7 @@ async function handleRegister() {
               required
               autocomplete="username"
               placeholder="tu_username"
-              class="w-full border-b-2 bg-transparent px-0 py-3 text-base outline-none transition-colors focus:border-current placeholder:opacity-40"
+              class="register-input w-full border-b-2 bg-transparent px-0 py-3 text-base outline-none transition-all duration-300 placeholder:opacity-40"
               :style="{ borderColor: 'var(--color-border)' }"
             />
             <p
@@ -158,7 +178,11 @@ async function handleRegister() {
             </p>
           </div>
 
-          <div>
+          <div
+            class="transition-all duration-700"
+            :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'"
+            style="transition-delay: 300ms"
+          >
             <label
               class="mb-2 block text-xs font-medium uppercase tracking-widest"
               style="color: var(--color-text-secondary)"
@@ -171,23 +195,29 @@ async function handleRegister() {
               type="text"
               autocomplete="name"
               placeholder="Tu Nombre"
-              class="w-full border-b-2 bg-transparent px-0 py-3 text-base outline-none transition-colors focus:border-current placeholder:opacity-40"
+              class="register-input w-full border-b-2 bg-transparent px-0 py-3 text-base outline-none transition-all duration-300 placeholder:opacity-40"
               :style="{ borderColor: 'var(--color-border)' }"
             />
           </div>
 
-          <button
-            type="submit"
-            :disabled="!step1Valid"
-            class="group mt-8 flex w-full items-center justify-center gap-3 py-4 text-sm font-medium uppercase tracking-[0.15em] transition-all duration-200 hover:opacity-85 disabled:opacity-30 disabled:cursor-not-allowed"
-            :style="{
-              backgroundColor: 'var(--color-accent)',
-              color: 'var(--color-bg)',
-            }"
+          <div
+            class="transition-all duration-700"
+            :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'"
+            style="transition-delay: 400ms"
           >
-            Continuar
-            <ArrowRight :size="16" class="transition-transform group-hover:translate-x-1" />
-          </button>
+            <button
+              type="submit"
+              :disabled="!step1Valid"
+              class="group mt-8 flex w-full items-center justify-center gap-3 py-4 text-sm font-medium uppercase tracking-[0.15em] transition-all duration-300 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none cursor-pointer"
+              :style="{
+                backgroundColor: 'var(--color-accent)',
+                color: 'var(--color-bg)',
+              }"
+            >
+              Continuar
+              <ArrowRight :size="16" class="transition-transform duration-300 group-hover:translate-x-1.5" />
+            </button>
+          </div>
         </form>
 
         <!-- Step 2: Password -->
@@ -206,13 +236,13 @@ async function handleRegister() {
                 required
                 autocomplete="new-password"
                 placeholder="••••••••"
-                class="w-full border-b-2 bg-transparent px-0 py-3 pr-10 text-base outline-none transition-colors focus:border-current placeholder:opacity-40"
+                class="register-input w-full border-b-2 bg-transparent px-0 py-3 pr-10 text-base outline-none transition-all duration-300 placeholder:opacity-40"
                 :style="{ borderColor: 'var(--color-border)' }"
               />
               <button
                 type="button"
                 @click="showPassword = !showPassword"
-                class="absolute right-0 top-1/2 -translate-y-1/2 p-1 opacity-50 hover:opacity-100"
+                class="absolute right-0 top-1/2 -translate-y-1/2 p-2 opacity-40 transition-all duration-200 hover:opacity-100 hover:scale-110 cursor-pointer"
               >
                 <Eye v-if="!showPassword" :size="18" />
                 <EyeOff v-else :size="18" />
@@ -248,7 +278,7 @@ async function handleRegister() {
               required
               autocomplete="new-password"
               placeholder="••••••••"
-              class="w-full border-b-2 bg-transparent px-0 py-3 text-base outline-none transition-colors focus:border-current placeholder:opacity-40"
+              class="register-input w-full border-b-2 bg-transparent px-0 py-3 text-base outline-none transition-all duration-300 placeholder:opacity-40"
               :style="{ borderColor: 'var(--color-border)' }"
             />
             <p
@@ -264,7 +294,7 @@ async function handleRegister() {
             <button
               type="button"
               @click="step = 1"
-              class="flex items-center justify-center border-2 px-6 py-4 text-sm font-medium uppercase tracking-[0.15em] transition-all hover:opacity-70"
+              class="flex items-center justify-center border-2 px-6 py-4 text-sm font-medium uppercase tracking-[0.15em] transition-all duration-300 hover:bg-[var(--color-bg-subtle)] hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               :style="{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }"
             >
               Atrás
@@ -272,7 +302,7 @@ async function handleRegister() {
             <button
               type="submit"
               :disabled="!step2Valid || auth.loading"
-              class="group flex flex-1 items-center justify-center gap-3 py-4 text-sm font-medium uppercase tracking-[0.15em] transition-all duration-200 hover:opacity-85 disabled:opacity-30 disabled:cursor-not-allowed"
+              class="group flex flex-1 items-center justify-center gap-3 py-4 text-sm font-medium uppercase tracking-[0.15em] transition-all duration-300 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none cursor-pointer"
               :style="{
                 backgroundColor: 'var(--color-accent)',
                 color: 'var(--color-bg)',
@@ -281,7 +311,7 @@ async function handleRegister() {
               <span v-if="auth.loading">Creando cuenta...</span>
               <template v-else>
                 Crear cuenta
-                <ArrowRight :size="16" class="transition-transform group-hover:translate-x-1" />
+                <ArrowRight :size="16" class="transition-transform duration-300 group-hover:translate-x-1.5" />
               </template>
             </button>
           </div>
@@ -298,7 +328,7 @@ async function handleRegister() {
 
         <RouterLink
           to="/login"
-          class="flex w-full items-center justify-center gap-3 border-2 py-4 text-sm font-medium uppercase tracking-[0.15em] transition-all hover:opacity-70"
+          class="flex w-full items-center justify-center gap-3 border-2 py-4 text-sm font-medium uppercase tracking-[0.15em] transition-all duration-300 hover:bg-[var(--color-accent)] hover:text-[var(--color-bg)] hover:border-[var(--color-accent)] hover:shadow-lg cursor-pointer"
           :style="{ borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }"
         >
           Iniciar sesión
@@ -308,7 +338,8 @@ async function handleRegister() {
 
     <!-- Right: Editorial image -->
     <div
-      class="hidden lg:flex lg:w-1/2 items-end p-12"
+      class="hidden lg:flex lg:w-1/2 items-end p-12 transition-opacity duration-1000"
+      :class="revealed ? 'opacity-100' : 'opacity-0'"
       style="
         background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, transparent 100%),
           url('https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1200&q=80') center/cover no-repeat;
@@ -323,3 +354,9 @@ async function handleRegister() {
     </div>
   </div>
 </template>
+
+<style scoped>
+.register-input:focus {
+  border-color: var(--color-accent) !important;
+}
+</style>

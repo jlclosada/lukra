@@ -1,70 +1,60 @@
 <script setup lang="ts">
-import { articles } from '@/data/mock'
-import { ArrowLeft, ArrowRight, Calendar, Clock, Share2 } from 'lucide-vue-next'
+import { useArticlesStore } from '@/stores/articles'
+import { useAuthStore } from '@/stores/auth'
+import { useUserActivityStore } from '@/stores/userActivity'
+import { ArrowLeft, ArrowRight, Bookmark, Calendar, Clock, Heart, MessageCircle, Send, Share2, Trash2 } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
 const revealed = ref(false)
+const auth = useAuthStore()
+const activity = useUserActivityStore()
+const articlesStore = useArticlesStore()
+const commentText = ref('')
 
-const article = computed(() => articles.find((a) => a.id === route.params.id))
+const articles = computed(() => articlesStore.publishedArticles)
+const article = computed(() => articlesStore.getById(route.params.id as string))
 
 const relatedArticles = computed(() => {
   if (!article.value) return []
-  return articles
+  return articles.value
     .filter((a) => a.id !== article.value!.id && a.category === article.value!.category)
     .slice(0, 2)
 })
 
 const nextArticle = computed(() => {
   if (!article.value) return null
-  const idx = articles.findIndex((a) => a.id === article.value!.id)
-  return idx < articles.length - 1 ? articles[idx + 1] : null
+  const idx = articles.value.findIndex((a) => a.id === article.value!.id)
+  return idx < articles.value.length - 1 ? articles.value[idx + 1] : null
 })
 
 const prevArticle = computed(() => {
   if (!article.value) return null
-  const idx = articles.findIndex((a) => a.id === article.value!.id)
-  return idx > 0 ? articles[idx - 1] : null
+  const idx = articles.value.findIndex((a) => a.id === article.value!.id)
+  return idx > 0 ? articles.value[idx - 1] : null
 })
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-// Generate magazine-style content sections from the article data
-const contentSections = computed(() => {
-  if (!article.value) return []
-  const a = article.value
-  return [
-    {
-      type: 'intro' as const,
-      text: a.excerpt,
-    },
-    {
-      type: 'paragraph' as const,
-      text: a.content || 'La moda contemporánea está atravesando uno de sus momentos más fascinantes. Las fronteras entre lo formal y lo casual se difuminan, dando paso a una era donde la autenticidad prima sobre las reglas establecidas. Los diseñadores más vanguardistas están explorando nuevas formas de expresión que desafían las convenciones tradicionales.',
-    },
-    {
-      type: 'quote' as const,
-      text: '"La moda no es algo que existe solo en los vestidos. La moda está en el cielo, en la calle, la moda tiene que ver con las ideas, con cómo vivimos, con lo que está pasando."',
-      author: 'Coco Chanel',
-    },
-    {
-      type: 'paragraph' as const,
-      text: 'En este contexto, las marcas independientes están liderando una revolución silenciosa. Su compromiso con la calidad, la sostenibilidad y la narrativa creativa las posiciona como referentes de una nueva generación de consumidores que valoran la historia detrás de cada prenda tanto como su estética.',
-    },
-    {
-      type: 'paragraph' as const,
-      text: 'La clave está en entender que el estilo personal no se construye de la noche a la mañana. Es un viaje de autodescubrimiento donde cada elección refleja quiénes somos y hacia dónde vamos. Las tendencias son puntos de referencia, pero nunca dictámenes absolutos.',
-    },
-  ]
-})
-
 onMounted(() => {
   requestAnimationFrame(() => (revealed.value = true))
 })
+
+const articleComments = computed(() =>
+  article.value
+    ? activity.comments.filter(c => c.targetType === 'article' && c.targetId === article.value!.id)
+    : []
+)
+
+function submitComment() {
+  if (!commentText.value.trim() || !article.value) return
+  activity.addComment(article.value.id, 'article', commentText.value.trim())
+  commentText.value = ''
+}
 
 // If no article found, redirect
 if (!article.value) {
@@ -140,51 +130,30 @@ if (!article.value) {
     </section>
 
     <!-- Article Body -->
-    <article class="mx-auto max-w-3xl px-6 py-16 sm:py-24">
+    <article class="mx-auto max-w-4xl px-6 py-16 sm:py-24">
+      <!-- Intro / Excerpt -->
       <div
-        v-for="(section, idx) in contentSections"
-        :key="idx"
-        class="transition-all duration-700"
+        class="mb-12 transition-all duration-700"
         :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'"
-        :style="{ transitionDelay: `${300 + idx * 150}ms` }"
+        :style="{ transitionDelay: '300ms' }"
       >
-        <!-- Intro (drop cap style) -->
-        <div v-if="section.type === 'intro'" class="mb-12">
-          <p
-            class="text-xl leading-[1.9] font-light sm:text-2xl first-letter:float-left first-letter:mr-3 first-letter:text-7xl first-letter:font-light first-letter:leading-[0.8]"
-            style="font-family: var(--font-display); color: var(--color-text); first-letter-font-family: var(--font-heading)"
-          >
-            {{ section.text }}
-          </p>
-          <div class="mt-10 mx-auto h-px w-16" style="background-color: var(--color-accent-warm)" />
-        </div>
-
-        <!-- Regular paragraph -->
-        <div v-else-if="section.type === 'paragraph'" class="mb-10">
-          <p class="text-base leading-[2] sm:text-[17px]" style="color: var(--color-text-secondary)">
-            {{ section.text }}
-          </p>
-        </div>
-
-        <!-- Pull quote -->
-        <div v-else-if="section.type === 'quote'" class="my-16 py-10 border-t border-b" :style="{ borderColor: 'var(--color-border)' }">
-          <blockquote class="text-center">
-            <p
-              class="text-2xl font-light italic leading-relaxed sm:text-3xl"
-              style="font-family: var(--font-display); color: var(--color-text)"
-            >
-              {{ section.text }}
-            </p>
-            <cite
-              v-if="'author' in section && section.author"
-              class="mt-6 block text-[11px] font-semibold uppercase tracking-[0.3em] not-italic"
-              style="color: var(--color-accent-warm)"
-            >
-              — {{ section.author }}
-            </cite>
-          </blockquote>
-        </div>
+        <p
+          class="text-xl leading-[1.9] font-light sm:text-2xl first-letter:float-left first-letter:mr-3 first-letter:text-7xl first-letter:font-light first-letter:leading-[0.8]"
+          style="font-family: var(--font-display); color: var(--color-text)"
+        >
+          {{ article.excerpt }}
+        </p>
+        <div class="mt-10 mx-auto h-px w-16" style="background-color: var(--color-accent-warm)" />
       </div>
+
+      <!-- Rich content from editor -->
+      <div
+        v-if="article.content"
+        class="article-prose transition-all duration-700"
+        :class="revealed ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'"
+        :style="{ transitionDelay: '450ms' }"
+        v-html="article.content"
+      />
 
       <!-- Tags -->
       <div class="mt-16 flex flex-wrap items-center gap-3 border-t pt-8" :style="{ borderColor: 'var(--color-border)' }">
@@ -197,15 +166,107 @@ if (!article.value) {
         </span>
       </div>
 
-      <!-- Share -->
-      <div class="mt-8 flex items-center gap-4">
-        <span class="text-[10px] font-semibold uppercase tracking-[0.2em]" style="color: var(--color-text-muted)">Compartir</span>
+      <!-- Share & Actions -->
+      <div v-if="auth.isAuthenticated" class="mt-8 flex items-center gap-4">
+        <span class="text-[10px] font-semibold uppercase tracking-[0.2em]" style="color: var(--color-text-muted)">Acciones</span>
         <button
-          class="flex h-10 w-10 items-center justify-center border transition-all duration-200 hover:border-[var(--color-accent)] cursor-pointer"
+          @click="activity.toggleLike(article.id, 'article')"
+          class="flex h-10 w-10 items-center justify-center border transition-all duration-200 cursor-pointer"
+          :style="{ borderColor: activity.isLiked(article.id, 'article') ? 'var(--color-error)' : 'var(--color-border)' }"
+        >
+          <Heart :size="15" :fill="activity.isLiked(article.id, 'article') ? 'var(--color-error)' : 'none'" :style="{ color: activity.isLiked(article.id, 'article') ? 'var(--color-error)' : 'var(--color-text-secondary)' }" />
+        </button>
+        <button
+          @click="activity.toggleSave(article.id, 'article')"
+          class="flex h-10 w-10 items-center justify-center border transition-all duration-200 cursor-pointer"
+          :style="{ borderColor: activity.isSaved(article.id, 'article') ? 'var(--color-accent-warm)' : 'var(--color-border)' }"
+        >
+          <Bookmark :size="15" :fill="activity.isSaved(article.id, 'article') ? 'var(--color-accent-warm)' : 'none'" :style="{ color: activity.isSaved(article.id, 'article') ? 'var(--color-accent-warm)' : 'var(--color-text-secondary)' }" />
+        </button>
+        <button
+          class="flex h-10 w-10 items-center justify-center border transition-all duration-200 cursor-pointer"
           :style="{ borderColor: 'var(--color-border)' }"
         >
           <Share2 :size="15" style="color: var(--color-text-secondary)" />
         </button>
+      </div>
+
+      <!-- Comments Section -->
+      <div v-if="auth.isAuthenticated" class="mt-16 border-t pt-10" :style="{ borderColor: 'var(--color-border)' }">
+        <div class="flex items-center gap-2 mb-8">
+          <MessageCircle :size="18" style="color: var(--color-text-muted)" />
+          <h3 class="text-lg font-medium" style="font-family: var(--font-heading)">
+            Comentarios
+            <span class="ml-1 text-sm font-normal" style="color: var(--color-text-muted)">({{ articleComments.length }})</span>
+          </h3>
+        </div>
+
+        <!-- Comment form -->
+        <div v-if="auth.isAuthenticated" class="mb-8">
+          <div class="flex gap-3">
+            <div class="h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-xs font-medium" style="background-color: var(--color-accent); color: var(--color-bg)">
+              {{ auth.user?.display_name?.charAt(0)?.toUpperCase() || auth.user?.email?.charAt(0)?.toUpperCase() || 'U' }}
+            </div>
+            <div class="flex-1">
+              <textarea
+                v-model="commentText"
+                rows="3"
+                placeholder="Escribe un comentario..."
+                class="w-full border px-4 py-3 text-sm bg-transparent outline-none resize-none focus:border-[var(--color-accent)] transition-colors"
+                :style="{ borderColor: 'var(--color-border)' }"
+              />
+              <div class="mt-2 flex justify-end">
+                <button
+                  @click="submitComment"
+                  :disabled="!commentText.trim()"
+                  class="inline-flex items-center gap-2 px-5 py-2 text-[11px] font-medium uppercase tracking-wider transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-bg)' }"
+                >
+                  <Send :size="12" />
+                  Comentar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="mb-8 text-center py-6 border" :style="{ borderColor: 'var(--color-border)' }">
+          <p class="text-sm" style="color: var(--color-text-muted)">
+            <RouterLink to="/login" class="underline hover:opacity-70" style="color: var(--color-accent)">Inicia sesión</RouterLink>
+            para dejar un comentario
+          </p>
+        </div>
+
+        <!-- Comments list -->
+        <div class="space-y-6">
+          <div
+            v-for="comment in articleComments"
+            :key="comment.id"
+            class="flex gap-3"
+          >
+            <div class="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-[10px] font-medium" style="background-color: var(--color-bg-subtle); color: var(--color-text-muted)">
+              U
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium">{{ auth.user?.display_name || 'Tú' }}</span>
+                <span class="text-[10px]" style="color: var(--color-text-muted)">
+                  {{ new Date(comment.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) }}
+                </span>
+              </div>
+              <p class="mt-1 text-sm leading-relaxed" style="color: var(--color-text-secondary)">{{ comment.text }}</p>
+              <button
+                @click="activity.removeComment(comment.id)"
+                class="mt-1 flex items-center gap-1 text-[10px] uppercase tracking-wider transition-opacity hover:opacity-100 opacity-40 cursor-pointer"
+                style="color: var(--color-error)"
+              >
+                <Trash2 :size="10" /> Eliminar
+              </button>
+            </div>
+          </div>
+          <p v-if="articleComments.length === 0" class="text-sm text-center py-6" style="color: var(--color-text-muted)">
+            Sé el primero en comentar este artículo
+          </p>
+        </div>
       </div>
     </article>
 
@@ -284,3 +345,108 @@ if (!article.value) {
     </section>
   </div>
 </template>
+
+<style scoped>
+.article-prose {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 2;
+  color: var(--color-text-secondary);
+}
+
+.article-prose :deep(p) {
+  margin-bottom: 1.5rem;
+}
+
+.article-prose :deep(h1) {
+  font-family: var(--font-heading);
+  font-size: 2.25rem;
+  font-weight: 300;
+  margin: 2.5rem 0 1rem;
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
+.article-prose :deep(h2) {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 400;
+  margin: 2rem 0 0.75rem;
+  line-height: 1.3;
+  color: var(--color-text);
+}
+
+.article-prose :deep(h3) {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 500;
+  margin: 1.5rem 0 0.5rem;
+  line-height: 1.4;
+  color: var(--color-text);
+}
+
+.article-prose :deep(blockquote) {
+  border-left: 3px solid var(--color-accent-warm);
+  padding-left: 1.25rem;
+  margin: 2rem 0;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--color-text);
+}
+
+.article-prose :deep(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 2px;
+  margin: 2rem 0;
+}
+
+.article-prose :deep(a) {
+  color: var(--color-accent-warm);
+  text-decoration: underline;
+  transition: opacity 0.2s;
+}
+
+.article-prose :deep(a:hover) {
+  opacity: 0.7;
+}
+
+.article-prose :deep(ul),
+.article-prose :deep(ol) {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+}
+
+.article-prose :deep(li) {
+  margin-bottom: 0.5rem;
+}
+
+.article-prose :deep(strong) {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.article-prose :deep(em) {
+  font-style: italic;
+}
+
+.article-prose :deep(mark) {
+  background-color: #fef08a;
+  padding: 0 3px;
+  border-radius: 2px;
+}
+
+.article-prose :deep(code) {
+  background-color: var(--color-bg-subtle);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+.article-prose :deep(hr) {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 2.5rem 0;
+}
+</style>

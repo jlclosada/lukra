@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import type { HeroSlide } from '@/data/mock'
-import { articles, heroSlides, looks, trends } from '@/data/mock'
+import BrandMarquee from '@/components/BrandMarquee.vue'
+import { useArticlesStore } from '@/stores/articles'
 import { useAuthStore } from '@/stores/auth'
+import { useLooksStore } from '@/stores/looks'
+import { useSiteConfigStore } from '@/stores/siteConfig'
+import { useTrendsStore } from '@/stores/trends'
 import { ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, Clock, Heart } from 'lucide-vue-next'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 const auth = useAuthStore()
+const config = useSiteConfigStore()
+const articlesStore = useArticlesStore()
+const articles = computed(() => articlesStore.publishedArticles)
 
 // ── Hero carousel ──
 const currentSlide = ref(0)
@@ -16,14 +22,14 @@ let slideInterval: ReturnType<typeof setInterval> | undefined
 function nextSlide() {
   if (isTransitioning.value) return
   isTransitioning.value = true
-  currentSlide.value = (currentSlide.value + 1) % heroSlides.length
+  currentSlide.value = (currentSlide.value + 1) % config.heroSlides.length
   setTimeout(() => (isTransitioning.value = false), 800)
 }
 
 function prevSlide() {
   if (isTransitioning.value) return
   isTransitioning.value = true
-  currentSlide.value = (currentSlide.value - 1 + heroSlides.length) % heroSlides.length
+  currentSlide.value = (currentSlide.value - 1 + config.heroSlides.length) % config.heroSlides.length
   setTimeout(() => (isTransitioning.value = false), 800)
 }
 
@@ -48,14 +54,36 @@ onUnmounted(() => {
   if (slideInterval) clearInterval(slideInterval)
 })
 
-const activeSlide = computed<HeroSlide>(() => heroSlides[currentSlide.value])
+const activeSlide = computed(() => config.heroSlides[currentSlide.value])
 
 // ── Looks gallery ──
-const homeLooks = computed(() => looks.slice(0, 8))
+const looksStore = useLooksStore()
+
+const homeLooks = computed(() => {
+  if (config.homeLookIds.length === 0) return looksStore.looks.slice(0, 8)
+  return config.homeLookIds.map(id => looksStore.looks.find(l => l.id === id)).filter(Boolean)
+})
 
 // ── Articles preview ──
-const featuredArticle = computed(() => articles.find((a) => a.featured) || articles[0])
-const recentArticles = computed(() => articles.filter((a) => a.id !== featuredArticle.value.id).slice(0, 3))
+const featuredArticle = computed(() => {
+  const found = articles.value.find(a => a.id === config.featuredArticleId)
+  return found || articles.value.find(a => a.featured) || articles.value[0]
+})
+const recentArticles = computed(() => {
+  if (config.homeArticleIds.length === 0) {
+    return articles.value.filter(a => a.id !== featuredArticle.value?.id).slice(0, 3)
+  }
+  return config.homeArticleIds
+    .map(id => articles.value.find(a => a.id === id))
+    .filter(Boolean)
+})
+
+// ── Trends ──
+const trendsStore = useTrendsStore()
+const homeTrends = computed(() => {
+  if (config.homeTrendIds.length === 0) return trendsStore.trends.slice(0, 3)
+  return config.homeTrendIds.map(id => trendsStore.trends.find(t => t.id === id)).filter(Boolean)
+})
 
 // ── Scroll-reveal observer ──
 const observedSections = ref<Set<string>>(new Set())
@@ -83,9 +111,9 @@ function formatDate(dateStr: string) {
 <template>
   <div>
     <!-- ════════ HERO CAROUSEL ════════ -->
-    <section class="relative overflow-hidden" style="height: calc(100vh - 73px)">
+    <section v-if="config.isSectionVisible('hero')" class="relative overflow-hidden" style="height: calc(100vh - 73px)">
       <div
-        v-for="(slide, index) in heroSlides"
+        v-for="(slide, index) in config.heroSlides"
         :key="slide.id"
         class="absolute inset-0 transition-all duration-[1200ms] ease-[cubic-bezier(0.77,0,0.175,1)]"
         :class="index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'"
@@ -151,7 +179,7 @@ function formatDate(dateStr: string) {
       <!-- Indicators -->
       <div class="absolute bottom-10 left-6 z-20 flex items-center gap-4 sm:left-12 lg:left-24">
         <button
-          v-for="(slide, index) in heroSlides"
+          v-for="(slide, index) in config.heroSlides"
           :key="slide.id"
           @click="goToSlide(index)"
           class="group flex items-center gap-2"
@@ -171,7 +199,7 @@ function formatDate(dateStr: string) {
     </section>
 
     <!-- ════════ LOOKS GALLERY (Irregular Masonry) ════════ -->
-    <section id="section-looks" data-reveal class="px-6 py-24 sm:px-12 lg:px-24">
+    <section v-if="config.isSectionVisible('looks-gallery')" id="section-looks" data-reveal class="px-6 py-24 sm:px-12 lg:px-24">
       <div
         class="mb-16 flex items-end justify-between transition-all duration-700"
         :class="observedSections.has('section-looks') ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'"
@@ -199,7 +227,7 @@ function formatDate(dateStr: string) {
           :class="observedSections.has('section-looks') ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'"
           :style="{ transitionDelay: `${150 + index * 100}ms` }"
         >
-          <RouterLink to="/looks" class="block">
+          <RouterLink :to="`/looks/${look.id}`" class="block">
             <div
               class="relative overflow-hidden"
               :class="{
@@ -237,25 +265,25 @@ function formatDate(dateStr: string) {
     </section>
 
     <!-- ════════ EDITORIAL QUOTE ════════ -->
-    <section class="overflow-hidden px-6 py-16 sm:px-12 lg:px-24">
+    <section v-if="config.isSectionVisible('editorial-quote')" class="overflow-hidden px-6 py-16 sm:px-12 lg:px-24">
       <div class="mx-auto max-w-4xl text-center">
         <p
           class="text-3xl font-light italic leading-relaxed sm:text-4xl lg:text-5xl"
           style="font-family: var(--font-display); color: var(--color-text-secondary)"
         >
-          "La moda no es algo que existe solo en los vestidos. La moda está en el cielo, en la calle, la moda tiene que ver con las ideas, con cómo vivimos."
+          {{ config.editorialQuote.text }}
         </p>
         <p class="mt-6 text-xs font-medium uppercase tracking-[0.3em]" style="color: var(--color-text-muted)">
-          — Coco Chanel
+          — {{ config.editorialQuote.author }}
         </p>
       </div>
     </section>
 
     <!-- ════════ BRAND MARQUEE ════════ -->
-    <BrandMarquee />
+    <BrandMarquee v-if="config.isSectionVisible('brand-marquee')" />
 
     <!-- ════════ ARTICLES ════════ -->
-    <section id="section-articles" data-reveal class="px-6 py-24 sm:px-12 lg:px-24" :style="{ backgroundColor: 'var(--color-bg-subtle)' }">
+    <section v-if="config.isSectionVisible('articles')" id="section-articles" data-reveal class="px-6 py-24 sm:px-12 lg:px-24" :style="{ backgroundColor: 'var(--color-bg-subtle)' }">
       <div
         class="mb-16 flex items-end justify-between transition-all duration-700"
         :class="observedSections.has('section-articles') ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'"
@@ -275,6 +303,7 @@ function formatDate(dateStr: string) {
 
       <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <RouterLink
+          v-if="featuredArticle"
           :to="`/articles/${featuredArticle.id}`"
           class="group transition-all duration-700"
           :class="observedSections.has('section-articles') ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'"
@@ -331,7 +360,7 @@ function formatDate(dateStr: string) {
     </section>
 
     <!-- ════════ TRENDS TEASER ════════ -->
-    <section id="section-trends" data-reveal class="px-6 py-24 sm:px-12 lg:px-24">
+    <section v-if="config.isSectionVisible('trends')" id="section-trends" data-reveal class="px-6 py-24 sm:px-12 lg:px-24">
       <div
         class="mb-16 text-center transition-all duration-700"
         :class="observedSections.has('section-trends') ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'"
@@ -342,9 +371,9 @@ function formatDate(dateStr: string) {
 
       <div class="mx-auto grid max-w-5xl grid-cols-1 gap-px sm:grid-cols-2 lg:grid-cols-3" :style="{ backgroundColor: 'var(--color-border)' }">
         <RouterLink
-          v-for="(trend, index) in trends.slice(0, 3)"
+          v-for="(trend, index) in homeTrends"
           :key="trend.id"
-          to="/trends"
+          :to="`/trends/${trend.id}`"
           class="group relative p-8 transition-all duration-700"
           :class="observedSections.has('section-trends') ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'"
           :style="{ backgroundColor: 'var(--color-bg)', transitionDelay: `${150 + index * 100}ms` }"
@@ -374,7 +403,7 @@ function formatDate(dateStr: string) {
     </section>
 
     <!-- ════════ CTA ════════ -->
-    <section v-if="!auth.isAuthenticated" class="px-6 py-24 text-center sm:px-12 lg:px-24" :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-bg)' }">
+    <section v-if="!auth.isAuthenticated && config.isSectionVisible('cta')" class="px-6 py-24 text-center sm:px-12 lg:px-24" :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-bg)' }">
       <p class="text-xs font-medium uppercase tracking-[0.3em] opacity-50">Únete a Lukra</p>
       <h2 class="mx-auto mt-4 max-w-2xl text-3xl font-light sm:text-4xl lg:text-5xl" style="font-family: var(--font-display)">
         Donde la moda se vive, se comparte y se reinventa

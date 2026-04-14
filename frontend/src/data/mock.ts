@@ -45,7 +45,10 @@ export interface Trend {
   id: string
   title: string
   description: string
+  content?: string
   image: string
+  author: string
+  authorAvatar: string
   tags: string[]
   season: string
   popularity: number
@@ -339,6 +342,8 @@ export const trends: Trend[] = [
     title: 'Quiet Luxury',
     description: 'La opulencia silenciosa domina 2026. Prendas sin logos, tejidos premium y cortes que hablan por sí solos. Menos señalización, más sustancia.',
     image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&q=80',
+    author: 'Elena Voss',
+    authorAvatar: 'https://i.pravatar.cc/80?img=5',
     tags: ['minimal', 'lujo', 'sin-logos'],
     season: 'SS26',
     popularity: 95,
@@ -348,6 +353,8 @@ export const trends: Trend[] = [
     title: 'Neo-Artisan',
     description: 'Lo hecho a mano recupera protagonismo. Punto, crochet, bordados y tintes naturales redefinen el concepto de exclusividad.',
     image: 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=800&q=80',
+    author: 'Marco Chen',
+    authorAvatar: 'https://i.pravatar.cc/80?img=12',
     tags: ['artesanal', 'handmade', 'texturas'],
     season: 'SS26',
     popularity: 82,
@@ -357,6 +364,8 @@ export const trends: Trend[] = [
     title: 'Tech-Wear Evolved',
     description: 'La ropa técnica trasciende lo funcional: Gore-Tex en trajes, membrana impermeable en blazers. La performance se viste de elegancia.',
     image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80',
+    author: 'Sofía Laurent',
+    authorAvatar: 'https://i.pravatar.cc/80?img=9',
     tags: ['tech', 'funcional', 'futurista'],
     season: 'AW25',
     popularity: 78,
@@ -366,6 +375,8 @@ export const trends: Trend[] = [
     title: 'Earth Tones Redux',
     description: 'Marrones, terracota, oliva y arena: la paleta de la tierra vuelve con sofisticación renovada. El color como conexión con la naturaleza.',
     image: 'https://images.unsplash.com/photo-1475180098004-ca77a66827be?w=800&q=80',
+    author: 'Elena Voss',
+    authorAvatar: 'https://i.pravatar.cc/80?img=5',
     tags: ['tierra', 'natural', 'color'],
     season: 'AW25',
     popularity: 88,
@@ -375,6 +386,8 @@ export const trends: Trend[] = [
     title: 'Fluid Genderless',
     description: 'Las colecciones sin género se consolidan como norma. Siluetas que celebran el cuerpo más allá de cualquier etiqueta.',
     image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=800&q=80',
+    author: 'Kai Nakamura',
+    authorAvatar: 'https://i.pravatar.cc/80?img=15',
     tags: ['genderless', 'fluido', 'inclusivo'],
     season: 'SS26',
     popularity: 91,
@@ -384,6 +397,8 @@ export const trends: Trend[] = [
     title: 'Maxi Volumes',
     description: 'Volúmenes exagerados, faldas amplias y abrigos oversize: la moda abraza el dramatismo escultórico como forma de expresión.',
     image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=800&q=80',
+    author: 'Marco Chen',
+    authorAvatar: 'https://i.pravatar.cc/80?img=12',
     tags: ['volumen', 'oversize', 'dramático'],
     season: 'AW25',
     popularity: 74,

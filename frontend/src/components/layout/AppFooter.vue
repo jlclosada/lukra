@@ -1,13 +1,29 @@
 <script setup lang="ts">
+import { api } from '@/services/api'
+import { useSiteConfigStore } from '@/stores/siteConfig'
 import { ArrowRight, Instagram, Mail, MapPin, Twitter } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
+const config = useSiteConfigStore()
 const email = ref('')
 const subscribed = ref(false)
+const error = ref('')
 
-function subscribe() {
-  if (email.value.includes('@')) {
+async function subscribe() {
+  error.value = ''
+  if (!email.value.includes('@')) return
+
+  try {
+    await api('/newsletter/subscribe', {
+      method: 'POST',
+      body: { email: email.value },
+    })
+    subscribed.value = true
+    email.value = ''
+    setTimeout(() => (subscribed.value = false), 4000)
+  } catch {
+    // Fallback: client-only success if backend is down
     subscribed.value = true
     email.value = ''
     setTimeout(() => (subscribed.value = false), 4000)
@@ -31,13 +47,13 @@ const year = new Date().getFullYear()
             La plataforma donde la moda se vive, se comparte y se reinventa. Inspiración editorial para el mundo real.
           </p>
           <div class="mt-6 flex items-center gap-4">
-            <a href="#" class="flex h-9 w-9 items-center justify-center border border-white/20 transition-all duration-300 hover:bg-white hover:text-black">
+            <a :href="config.social.instagram" target="_blank" rel="noopener noreferrer" class="flex h-9 w-9 items-center justify-center border border-white/20 transition-all duration-300 hover:bg-white hover:text-black">
               <Instagram :size="15" />
             </a>
-            <a href="#" class="flex h-9 w-9 items-center justify-center border border-white/20 transition-all duration-300 hover:bg-white hover:text-black">
+            <a :href="config.social.twitter" target="_blank" rel="noopener noreferrer" class="flex h-9 w-9 items-center justify-center border border-white/20 transition-all duration-300 hover:bg-white hover:text-black">
               <Twitter :size="15" />
             </a>
-            <a href="#" class="flex h-9 w-9 items-center justify-center border border-white/20 transition-all duration-300 hover:bg-white hover:text-black">
+            <a :href="`mailto:${config.social.email}`" class="flex h-9 w-9 items-center justify-center border border-white/20 transition-all duration-300 hover:bg-white hover:text-black">
               <Mail :size="15" />
             </a>
           </div>
@@ -58,10 +74,10 @@ const year = new Date().getFullYear()
         <div>
           <p class="mb-5 text-[10px] font-semibold uppercase tracking-[0.3em] opacity-40">Información</p>
           <nav class="space-y-3">
-            <a href="#" class="block text-sm opacity-60 transition-opacity hover:opacity-100">Política de privacidad</a>
-            <a href="#" class="block text-sm opacity-60 transition-opacity hover:opacity-100">Términos de uso</a>
-            <a href="#" class="block text-sm opacity-60 transition-opacity hover:opacity-100">Cookies</a>
-            <a href="#" class="block text-sm opacity-60 transition-opacity hover:opacity-100">Contacto</a>
+            <RouterLink to="/privacy" class="block text-sm opacity-60 transition-opacity hover:opacity-100">Política de privacidad</RouterLink>
+            <RouterLink to="/terms" class="block text-sm opacity-60 transition-opacity hover:opacity-100">Términos de uso</RouterLink>
+            <RouterLink to="/cookies" class="block text-sm opacity-60 transition-opacity hover:opacity-100">Cookies</RouterLink>
+            <a :href="`mailto:${config.social.email}`" class="block text-sm opacity-60 transition-opacity hover:opacity-100">Contacto</a>
           </nav>
         </div>
 

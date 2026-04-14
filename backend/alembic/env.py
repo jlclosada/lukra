@@ -10,6 +10,9 @@ from app.database import Base
 
 # Import all models so Alembic can detect them
 from app.models.user import User  # noqa: F401
+from app.models.newsletter import NewsletterSubscriber  # noqa: F401
+from app.models.brand import Brand  # noqa: F401
+from app.models.tag import Tag  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

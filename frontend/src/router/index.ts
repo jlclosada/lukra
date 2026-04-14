@@ -30,6 +30,11 @@ const router = createRouter({
       component: () => import('@/pages/LooksPage.vue'),
     },
     {
+      path: '/looks/:id',
+      name: 'look-detail',
+      component: () => import('@/pages/LooksPage.vue'),
+    },
+    {
       path: '/articles',
       name: 'articles',
       component: () => import('@/pages/ArticlesPage.vue'),
@@ -45,9 +50,29 @@ const router = createRouter({
       component: () => import('@/pages/TrendsPage.vue'),
     },
     {
+      path: '/trends/:id',
+      name: 'trend-detail',
+      component: () => import('@/pages/TrendDetailPage.vue'),
+    },
+    {
       path: '/about',
       name: 'about',
       component: () => import('@/pages/AboutPage.vue'),
+    },
+    {
+      path: '/privacy',
+      name: 'privacy',
+      component: () => import('@/pages/PrivacyPage.vue'),
+    },
+    {
+      path: '/terms',
+      name: 'terms',
+      component: () => import('@/pages/TermsPage.vue'),
+    },
+    {
+      path: '/cookies',
+      name: 'cookies',
+      component: () => import('@/pages/CookiesPage.vue'),
     },
     {
       path: '/profile',
@@ -81,9 +106,20 @@ const router = createRouter({
           component: () => import('@/pages/admin/AdminTrends.vue'),
         },
         {
+          path: 'brands',
+          name: 'admin-brands',
+          component: () => import('@/pages/admin/AdminBrands.vue'),
+        },
+        {
           path: 'users',
           name: 'admin-users',
           component: () => import('@/pages/admin/AdminUsers.vue'),
+          meta: { requiresAdmin: true },
+        },
+        {
+          path: 'settings',
+          name: 'admin-settings',
+          component: () => import('@/pages/admin/AdminSettings.vue'),
           meta: { requiresAdmin: true },
         },
       ],

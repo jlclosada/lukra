@@ -1,21 +1,24 @@
 <script setup lang="ts">
-import { articles } from '@/data/mock'
+import { useArticlesStore } from '@/stores/articles'
 import { ArrowUpRight, Clock } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+
+const articlesStore = useArticlesStore()
+const articles = computed(() => articlesStore.publishedArticles)
 
 const revealed = ref(false)
 const activeCategory = ref<string | null>(null)
 
 const categories = computed(() => {
   const cats = new Set<string>()
-  articles.forEach((a) => cats.add(a.category))
+  articles.value.forEach((a) => cats.add(a.category))
   return Array.from(cats)
 })
 
 const filteredArticles = computed(() => {
-  if (!activeCategory.value) return articles
-  return articles.filter((a) => a.category === activeCategory.value)
+  if (!activeCategory.value) return articles.value
+  return articles.value.filter((a) => a.category === activeCategory.value)
 })
 
 const featured = computed(() => filteredArticles.value.find((a) => a.featured) || filteredArticles.value[0])

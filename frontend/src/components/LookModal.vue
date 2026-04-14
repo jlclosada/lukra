@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import type { Look, ProductHotspot } from '@/data/mock';
-import { ArrowRight, ExternalLink, Heart, Share2, ShoppingBag, Sparkles, X } from 'lucide-vue-next';
+import { useAuthStore } from '@/stores/auth';
+import { useUserActivityStore } from '@/stores/userActivity';
+import { ArrowRight, Bookmark, ExternalLink, Heart, Share2, ShoppingBag, Sparkles, X } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+
+const activity = useUserActivityStore()
+const auth = useAuthStore()
 
 const props = defineProps<{
   look: Look | null
@@ -16,6 +21,7 @@ const activeHotspot = ref<ProductHotspot | null>(null)
 const hoveredHotspot = ref<ProductHotspot | null>(null)
 const imageLoaded = ref(false)
 const showPanel = ref(false)
+let hoverTimeout: ReturnType<typeof setTimeout> | null = null
 
 const hasHotspots = computed(() => (props.look?.hotspots?.length ?? 0) > 0)
 const displayedHotspot = computed(() => hoveredHotspot.value || activeHotspot.value)
@@ -25,11 +31,24 @@ function selectHotspot(hotspot: ProductHotspot) {
 }
 
 function hoverHotspot(hotspot: ProductHotspot) {
+  if (hoverTimeout) { clearTimeout(hoverTimeout); hoverTimeout = null }
   hoveredHotspot.value = hotspot
 }
 
 function leaveHotspot() {
-  hoveredHotspot.value = null
+  hoverTimeout = setTimeout(() => {
+    hoveredHotspot.value = null
+  }, 400)
+}
+
+function enterTooltip() {
+  if (hoverTimeout) { clearTimeout(hoverTimeout); hoverTimeout = null }
+}
+
+function leaveTooltip() {
+  hoverTimeout = setTimeout(() => {
+    hoveredHotspot.value = null
+  }, 300)
 }
 
 function closeModal() {
@@ -183,25 +202,38 @@ onUnmounted(() => {
               <Transition name="tooltip">
                 <div
                   v-if="displayedHotspot"
-                  class="absolute z-30 pointer-events-none"
+                  class="absolute z-30"
                   :style="tooltipPosition(displayedHotspot)"
+                  @mouseenter="enterTooltip"
+                  @mouseleave="leaveTooltip"
                 >
                   <div
-                    class="relative min-w-[240px] max-w-[280px] p-5 shadow-2xl"
-                    style="background: rgba(255,255,255,0.97); backdrop-filter: blur(20px); border-radius: 2px"
+                    class="relative min-w-[260px] max-w-[300px] overflow-hidden shadow-2xl"
+                    style="background: rgba(255,255,255,0.98); backdrop-filter: blur(20px); border-radius: 4px"
                   >
-                    <div class="absolute left-0 top-0 h-full w-[2px]" style="background: var(--color-accent-warm)" />
-                    <p class="text-[9px] font-semibold uppercase tracking-[0.25em]" style="color: var(--color-accent-warm)">
-                      {{ displayedHotspot.brand }}
-                    </p>
-                    <p class="mt-1.5 text-sm font-medium text-gray-900 leading-snug">{{ displayedHotspot.name }}</p>
-                    <div class="mt-3 flex items-center justify-between">
-                      <p class="text-lg font-light text-gray-900" style="font-family: var(--font-display)">
-                        {{ formatPrice(displayedHotspot.price, displayedHotspot.currency) }}
+                    <!-- Accent top bar -->
+                    <div class="h-[3px] w-full" style="background: linear-gradient(90deg, var(--color-accent-warm), var(--color-accent-gold))" />
+                    <div class="p-5">
+                      <p class="text-[9px] font-semibold uppercase tracking-[0.25em]" style="color: var(--color-accent-warm)">
+                        {{ displayedHotspot.brand }}
                       </p>
-                      <span class="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-gray-400">
-                        Ver <ExternalLink :size="9" />
-                      </span>
+                      <p class="mt-1.5 text-sm font-medium text-gray-900 leading-snug">{{ displayedHotspot.name }}</p>
+                      <div class="mt-3 flex items-center justify-between">
+                        <p class="text-xl font-light text-gray-900" style="font-family: var(--font-display)">
+                          {{ formatPrice(displayedHotspot.price, displayedHotspot.currency) }}
+                        </p>
+                      </div>
+                      <a
+                        v-if="displayedHotspot.productUrl"
+                        :href="displayedHotspot.productUrl"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="mt-3 flex items-center justify-center gap-2 w-full py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-80"
+                        style="background-color: var(--color-accent); border-radius: 2px"
+                        @click.stop
+                      >
+                        Ver producto <ExternalLink :size="11" />
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -280,20 +312,35 @@ onUnmounted(() => {
               </div>
 
               <!-- Actions -->
-              <div class="mt-7 flex items-center gap-5 border-t border-b py-5" :style="{ borderColor: 'var(--color-border)' }">
+              <div v-if="auth.isAuthenticated" class="mt-7 flex items-center gap-4 border-t border-b py-5" :style="{ borderColor: 'var(--color-border)' }">
                 <button
-                  class="flex items-center gap-2.5 text-sm transition-all duration-200 hover:text-[var(--color-error)] cursor-pointer group"
-                  style="color: var(--color-text-secondary)"
+                  @click="activity.toggleLike(look.id, 'look')"
+                  class="flex items-center gap-2 px-3 py-2 text-sm transition-all duration-200 cursor-pointer group border"
+                  :style="{
+                    color: activity.isLiked(look.id, 'look') ? 'var(--color-error)' : 'var(--color-text-secondary)',
+                    borderColor: activity.isLiked(look.id, 'look') ? 'var(--color-error)' : 'var(--color-border)',
+                  }"
                 >
-                  <Heart :size="17" class="transition-transform group-hover:scale-110" />
-                  <span class="font-medium">{{ look.likes }}</span>
+                  <Heart :size="16" :fill="activity.isLiked(look.id, 'look') ? 'currentColor' : 'none'" class="transition-transform group-hover:scale-110" />
+                  <span class="text-xs font-medium">{{ look.likes }}</span>
                 </button>
                 <button
-                  class="flex items-center gap-2.5 text-sm transition-opacity duration-200 hover:opacity-60 cursor-pointer"
-                  style="color: var(--color-text-secondary)"
+                  @click="activity.toggleSave(look.id, 'look')"
+                  class="flex items-center gap-2 px-3 py-2 text-sm transition-all duration-200 cursor-pointer group border"
+                  :style="{
+                    color: activity.isSaved(look.id, 'look') ? 'var(--color-accent-warm)' : 'var(--color-text-secondary)',
+                    borderColor: activity.isSaved(look.id, 'look') ? 'var(--color-accent-warm)' : 'var(--color-border)',
+                  }"
                 >
-                  <Share2 :size="17" />
-                  <span>Compartir</span>
+                  <Bookmark :size="16" :fill="activity.isSaved(look.id, 'look') ? 'currentColor' : 'none'" class="transition-transform group-hover:scale-110" />
+                  <span class="text-xs font-medium">{{ activity.isSaved(look.id, 'look') ? 'Guardado' : 'Guardar' }}</span>
+                </button>
+                <button
+                  class="flex items-center gap-2 px-3 py-2 text-sm transition-all duration-200 hover:opacity-60 cursor-pointer border"
+                  :style="{ color: 'var(--color-text-secondary)', borderColor: 'var(--color-border)' }"
+                >
+                  <Share2 :size="16" />
+                  <span class="text-xs font-medium">Compartir</span>
                 </button>
               </div>
 
@@ -345,7 +392,10 @@ onUnmounted(() => {
                         {{ formatPrice(hotspot.price, hotspot.currency) }}
                       </p>
                       <a
+                        v-if="hotspot.productUrl"
                         :href="hotspot.productUrl"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         class="mt-1 inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider transition-all duration-200 opacity-0 group-hover/item:opacity-100"
                         style="color: var(--color-accent-warm)"
                         @click.stop

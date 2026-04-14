@@ -1,26 +1,33 @@
 <script setup lang="ts">
-import { articles, looks, trends } from '@/data/mock'
+import { useArticlesStore } from '@/stores/articles'
+import { useLooksStore } from '@/stores/looks'
+import { useTrendsStore } from '@/stores/trends'
 import { BookOpen, Camera, Eye, Heart, TrendingUp, Users } from 'lucide-vue-next'
 import { computed } from 'vue'
+
+const articlesStore = useArticlesStore()
+const looksStore = useLooksStore()
+const trendsStore = useTrendsStore()
+const articles = computed(() => articlesStore.articles)
 
 const stats = computed(() => [
   {
     label: 'Looks',
-    value: looks.length,
+    value: looksStore.looks.length,
     icon: Camera,
     color: 'var(--color-accent-warm)',
     change: '+3 esta semana',
   },
   {
     label: 'Artículos',
-    value: articles.length,
+    value: articles.value.length,
     icon: BookOpen,
     color: 'var(--color-accent-cool)',
     change: '+1 esta semana',
   },
   {
     label: 'Tendencias',
-    value: trends.length,
+    value: trendsStore.trends.length,
     icon: TrendingUp,
     color: 'var(--color-success)',
     change: '+2 esta semana',
@@ -44,7 +51,7 @@ const recentActivity = [
 ]
 
 const topLooks = computed(() =>
-  [...looks].sort((a, b) => b.likes - a.likes).slice(0, 5),
+  [...looksStore.looks].sort((a, b) => b.likes - a.likes).slice(0, 5),
 )
 </script>
 
