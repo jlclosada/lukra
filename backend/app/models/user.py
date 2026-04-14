@@ -28,7 +28,7 @@ class User(Base):
     )
     hashed_password: Mapped[str] = mapped_column(String(128), nullable=False)
     display_name: Mapped[str | None] = mapped_column(String(100))
-    avatar_url: Mapped[str | None] = mapped_column(String(500))
+    avatar_url: Mapped[str | None] = mapped_column(Text)
     bio: Mapped[str | None] = mapped_column(Text)
     gender: Mapped[str | None] = mapped_column(String(30))
     role: Mapped[UserRole] = mapped_column(

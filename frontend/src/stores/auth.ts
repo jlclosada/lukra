@@ -1,3 +1,4 @@
+import { api } from '@/services/api'
 import { authService } from '@/services/auth.service'
 import type { LoginPayload, RegisterPayload, User } from '@/types'
 import { defineStore } from 'pinia'
@@ -67,6 +68,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function updateProfile(data: Partial<Pick<User, 'display_name' | 'bio' | 'avatar_url' | 'gender' | 'website' | 'instagram'>>) {
+    const updated = await api<User>('/users/me', { method: 'PATCH', body: data })
+    user.value = updated
+    return updated
+  }
+
   function logout() {
     _clearTokens()
     user.value = null
@@ -84,6 +91,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     register,
     fetchUser,
+    updateProfile,
     logout,
   }
 })

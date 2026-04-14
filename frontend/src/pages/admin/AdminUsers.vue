@@ -1,55 +1,10 @@
 <script setup lang="ts">
+import { api } from '@/services/api'
 import type { User } from '@/types'
 import { Edit3, Mail, Search, Shield, ShieldCheck, Trash2, User as UserIcon, Users, X } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
-// Mock users for development
-const mockUsers: User[] = [
-  {
-    id: '1', email: 'admin@lukra.com', username: 'admin', display_name: 'Admin Lukra',
-    avatar_url: 'https://i.pravatar.cc/80?img=12', bio: 'Administrador de la plataforma',
-    gender: null, role: 'admin', website: null, instagram: '@lukra_admin',
-    is_active: true, email_verified: true, created_at: '2024-01-15T10:00:00Z', updated_at: '2026-04-10T08:00:00Z',
-  },
-  {
-    id: '2', email: 'editor@lukra.com', username: 'editor', display_name: 'María García',
-    avatar_url: 'https://i.pravatar.cc/80?img=1', bio: 'Editora de contenido y estilista',
-    gender: 'female', role: 'editor', website: 'https://mariagarcia.com', instagram: '@mariagarcia',
-    is_active: true, email_verified: true, created_at: '2025-03-20T14:00:00Z', updated_at: '2026-04-08T09:00:00Z',
-  },
-  {
-    id: '3', email: 'carlos@email.com', username: 'carlosruiz', display_name: 'Carlos Ruiz',
-    avatar_url: 'https://i.pravatar.cc/80?img=3', bio: 'Fotógrafo de moda y street style',
-    gender: 'male', role: 'editor', website: null, instagram: '@carlosruiz_foto',
-    is_active: true, email_verified: true, created_at: '2025-06-10T11:00:00Z', updated_at: '2026-04-05T16:00:00Z',
-  },
-  {
-    id: '4', email: 'lucia.fernandez@email.com', username: 'luciaf', display_name: 'Lucía Fernández',
-    avatar_url: 'https://i.pravatar.cc/80?img=5', bio: null,
-    gender: 'female', role: 'default', website: null, instagram: null,
-    is_active: true, email_verified: true, created_at: '2025-11-05T09:00:00Z', updated_at: '2026-03-28T12:00:00Z',
-  },
-  {
-    id: '5', email: 'pablo.m@email.com', username: 'pablomartin', display_name: 'Pablo Martín',
-    avatar_url: 'https://i.pravatar.cc/80?img=11', bio: 'Apasionado de la moda sostenible',
-    gender: 'male', role: 'default', website: null, instagram: '@pablomoda',
-    is_active: true, email_verified: false, created_at: '2026-01-20T15:00:00Z', updated_at: '2026-04-01T10:00:00Z',
-  },
-  {
-    id: '6', email: 'ana.lopez@email.com', username: 'analopez', display_name: 'Ana López',
-    avatar_url: 'https://i.pravatar.cc/80?img=9', bio: 'Diseñadora gráfica y amante del street style',
-    gender: 'female', role: 'default', website: 'https://analopez.design', instagram: '@analopez_design',
-    is_active: false, email_verified: true, created_at: '2025-08-12T08:00:00Z', updated_at: '2026-02-15T14:00:00Z',
-  },
-  {
-    id: '7', email: 'nuevo@email.com', username: 'newuser2026', display_name: null,
-    avatar_url: null, bio: null,
-    gender: null, role: 'default', website: null, instagram: null,
-    is_active: true, email_verified: false, created_at: '2026-04-12T20:00:00Z', updated_at: '2026-04-12T20:00:00Z',
-  },
-]
-
-const allUsers = ref<User[]>([...mockUsers])
+const allUsers = ref<User[]>([])
 const searchQuery = ref('')
 const roleFilter = ref<string | null>(null)
 const editingUser = ref<User | null>(null)
@@ -61,6 +16,17 @@ const editForm = ref({
   role: 'default' as 'admin' | 'editor' | 'default',
   is_active: true,
 })
+
+async function fetchUsers() {
+  try {
+    const data = await api<{ items: User[] }>('/users/', { params: { per_page: 100 } })
+    allUsers.value = data.items
+  } catch {
+    allUsers.value = []
+  }
+}
+
+onMounted(fetchUsers)
 
 const filteredUsers = computed(() => {
   let users = allUsers.value
@@ -97,16 +63,29 @@ function openEdit(user: User) {
   showEditModal.value = true
 }
 
-function saveUser() {
+async function saveUser() {
   if (!editingUser.value) return
-  const idx = allUsers.value.findIndex((u) => u.id === editingUser.value!.id)
-  if (idx !== -1) {
-    allUsers.value[idx] = {
-      ...allUsers.value[idx],
-      display_name: editForm.value.display_name || null,
-      role: editForm.value.role,
-      is_active: editForm.value.is_active,
-      updated_at: new Date().toISOString(),
+  try {
+    const updated = await api<User>(`/users/${editingUser.value.id}/role`, {
+      method: 'PATCH',
+      body: {
+        role: editForm.value.role,
+        is_active: editForm.value.is_active,
+      },
+    })
+    const idx = allUsers.value.findIndex((u) => u.id === editingUser.value!.id)
+    if (idx !== -1) allUsers.value[idx] = updated
+  } catch {
+    // fallback: update locally
+    const idx = allUsers.value.findIndex((u) => u.id === editingUser.value!.id)
+    if (idx !== -1) {
+      allUsers.value[idx] = {
+        ...allUsers.value[idx],
+        display_name: editForm.value.display_name || null,
+        role: editForm.value.role,
+        is_active: editForm.value.is_active,
+        updated_at: new Date().toISOString(),
+      }
     }
   }
   showEditModal.value = false

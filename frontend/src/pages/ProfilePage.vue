@@ -44,23 +44,24 @@ function triggerAvatarUpload() {
   fileInput.value?.click()
 }
 
-function handleAvatarFile(e: Event) {
+async function handleAvatarFile(e: Event) {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
   if (!file) return
   const reader = new FileReader()
-  reader.onload = () => {
-    avatarPreview.value = reader.result as string
-    localStorage.setItem('lukra_avatar', avatarPreview.value)
+  reader.onload = async () => {
+    const base64 = reader.result as string
+    avatarPreview.value = base64
+    try {
+      await auth.updateProfile({ avatar_url: base64 })
+    } catch {
+      // keep preview even if save fails
+    }
   }
   reader.readAsDataURL(file)
 }
 
-// Load saved avatar
-const savedAvatar = localStorage.getItem('lukra_avatar')
-if (savedAvatar) avatarPreview.value = savedAvatar
-
-const displayAvatar = computed(() => avatarPreview.value || auth.user?.avatar_url)
+const displayAvatar = computed(() => auth.user?.avatar_url || avatarPreview.value)
 
 // ── Edit profile ──
 const editing = ref(false)
@@ -81,8 +82,12 @@ function startEdit() {
   editing.value = true
 }
 
-function saveEdit() {
-  // In a full app this would call the API
+async function saveEdit() {
+  try {
+    await auth.updateProfile(editForm.value)
+  } catch {
+    // silently fail
+  }
   editing.value = false
 }
 

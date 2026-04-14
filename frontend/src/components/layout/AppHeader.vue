@@ -83,13 +83,14 @@ function closeMobile() {
             class="flex items-center gap-2 transition-opacity duration-200 hover:opacity-60 cursor-pointer"
           >
             <div
-              class="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold uppercase"
+              class="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full text-[10px] font-semibold uppercase"
               :style="{
                 backgroundColor: auth.user?.role === 'admin' ? 'var(--color-accent-gold)' : auth.user?.role === 'editor' ? 'var(--color-accent-cool)' : 'var(--color-bg-subtle)',
                 color: auth.user?.role !== 'default' ? '#fff' : 'var(--color-text-muted)',
               }"
             >
-              {{ (auth.user?.display_name || auth.user?.username || 'U').charAt(0) }}
+              <img v-if="auth.user?.avatar_url" :src="auth.user.avatar_url" class="h-full w-full object-cover" />
+              <span v-else>{{ (auth.user?.display_name || auth.user?.username || 'U').charAt(0) }}</span>
             </div>
             <span class="hidden text-xs font-medium sm:inline">{{ auth.user?.display_name || auth.user?.username }}</span>
           </RouterLink>

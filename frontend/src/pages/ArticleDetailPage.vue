@@ -106,11 +106,10 @@ if (!article.value) {
 
           <div class="mt-8 flex flex-wrap items-center gap-6 text-white/60">
             <div class="flex items-center gap-3">
-              <img
-                :src="article.authorAvatar"
-                :alt="article.author"
-                class="h-10 w-10 rounded-full object-cover ring-2 ring-white/20"
-              />
+              <div class="h-10 w-10 shrink-0 overflow-hidden rounded-full ring-2 ring-white/20 flex items-center justify-center text-xs font-medium" :style="{ backgroundColor: article.authorAvatar ? 'transparent' : 'rgba(255,255,255,0.15)', color: '#fff' }">
+                <img v-if="article.authorAvatar" :src="article.authorAvatar" :alt="article.author" class="h-full w-full object-cover" />
+                <span v-else>{{ article.author.charAt(0).toUpperCase() }}</span>
+              </div>
               <div>
                 <p class="text-sm font-medium text-white">{{ article.author }}</p>
                 <p class="text-[11px]">Redactor</p>
@@ -204,8 +203,9 @@ if (!article.value) {
         <!-- Comment form -->
         <div v-if="auth.isAuthenticated" class="mb-8">
           <div class="flex gap-3">
-            <div class="h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-xs font-medium" style="background-color: var(--color-accent); color: var(--color-bg)">
-              {{ auth.user?.display_name?.charAt(0)?.toUpperCase() || auth.user?.email?.charAt(0)?.toUpperCase() || 'U' }}
+            <div class="h-9 w-9 shrink-0 overflow-hidden rounded-full flex items-center justify-center text-xs font-medium" style="background-color: var(--color-accent); color: var(--color-bg)">
+              <img v-if="auth.user?.avatar_url" :src="auth.user.avatar_url" class="h-full w-full object-cover" />
+              <span v-else>{{ auth.user?.display_name?.charAt(0)?.toUpperCase() || auth.user?.email?.charAt(0)?.toUpperCase() || 'U' }}</span>
             </div>
             <div class="flex-1">
               <textarea
@@ -243,12 +243,13 @@ if (!article.value) {
             :key="comment.id"
             class="flex gap-3"
           >
-            <div class="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-[10px] font-medium" style="background-color: var(--color-bg-subtle); color: var(--color-text-muted)">
-              U
+            <div class="h-8 w-8 shrink-0 overflow-hidden rounded-full flex items-center justify-center text-[10px] font-medium" style="background-color: var(--color-bg-subtle); color: var(--color-text-muted)">
+              <img v-if="auth.user?.avatar_url" :src="auth.user.avatar_url" class="h-full w-full object-cover" />
+              <span v-else>{{ (auth.user?.display_name || auth.user?.username || 'U').charAt(0).toUpperCase() }}</span>
             </div>
             <div class="flex-1">
               <div class="flex items-center gap-2">
-                <span class="text-sm font-medium">{{ auth.user?.display_name || 'Tú' }}</span>
+                <span class="text-sm font-medium">{{ auth.user?.display_name || auth.user?.username || 'Tú' }}</span>
                 <span class="text-[10px]" style="color: var(--color-text-muted)">
                   {{ new Date(comment.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) }}
                 </span>

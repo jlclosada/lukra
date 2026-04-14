@@ -119,7 +119,7 @@ function saveLook() {
       description: form.value.description,
       image: form.value.image || 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80',
       author: form.value.author,
-      authorAvatar: form.value.authorAvatar || 'https://i.pravatar.cc/80?img=1',
+      authorAvatar: form.value.authorAvatar || '',
       tags,
       likes: 0,
       season: form.value.season,
@@ -396,7 +396,10 @@ function saveHotspots() {
             </td>
             <td class="hidden px-6 py-4 md:table-cell">
               <div class="flex items-center gap-2">
-                <img :src="look.authorAvatar" :alt="look.author" class="h-6 w-6 rounded-full object-cover" />
+                <div class="h-6 w-6 shrink-0 overflow-hidden rounded-full flex items-center justify-center text-[9px] font-medium" :style="{ backgroundColor: look.authorAvatar ? 'transparent' : 'var(--color-bg-subtle)', color: 'var(--color-text-muted)' }">
+                  <img v-if="look.authorAvatar" :src="look.authorAvatar" :alt="look.author" class="h-full w-full object-cover" />
+                  <span v-else>{{ look.author.charAt(0).toUpperCase() }}</span>
+                </div>
                 <span class="text-sm" style="color: var(--color-text-secondary)">{{ look.author }}</span>
               </div>
             </td>

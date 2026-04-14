@@ -110,7 +110,10 @@ onMounted(() => {
               {{ featured.excerpt }}
             </p>
             <div class="mt-6 flex items-center gap-4">
-              <img :src="featured.authorAvatar" :alt="featured.author" class="h-8 w-8 rounded-full object-cover" />
+              <div class="h-8 w-8 shrink-0 overflow-hidden rounded-full flex items-center justify-center text-[10px] font-medium" :style="{ backgroundColor: featured.authorAvatar ? 'transparent' : 'var(--color-bg-subtle)', color: 'var(--color-text-muted)' }">
+                <img v-if="featured.authorAvatar" :src="featured.authorAvatar" :alt="featured.author" class="h-full w-full object-cover" />
+                <span v-else>{{ featured.author.charAt(0).toUpperCase() }}</span>
+              </div>
               <div>
                 <p class="text-sm font-medium">{{ featured.author }}</p>
                 <div class="flex items-center gap-2 text-xs" style="color: var(--color-text-muted)">
@@ -168,7 +171,10 @@ onMounted(() => {
               {{ article.excerpt }}
             </p>
             <div class="mt-4 flex items-center gap-3">
-              <img :src="article.authorAvatar" :alt="article.author" class="h-6 w-6 rounded-full object-cover" />
+              <div class="h-6 w-6 shrink-0 overflow-hidden rounded-full flex items-center justify-center text-[9px] font-medium" :style="{ backgroundColor: article.authorAvatar ? 'transparent' : 'var(--color-bg-subtle)', color: 'var(--color-text-muted)' }">
+                <img v-if="article.authorAvatar" :src="article.authorAvatar" :alt="article.author" class="h-full w-full object-cover" />
+                <span v-else>{{ article.author.charAt(0).toUpperCase() }}</span>
+              </div>
               <span class="text-xs font-medium">{{ article.author }}</span>
               <span class="text-xs" style="color: var(--color-text-muted)">·</span>
               <span class="text-xs" style="color: var(--color-text-muted)">{{ article.readTime }} min</span>

@@ -63,7 +63,7 @@ function getStaffName(user: StaffUser) {
 
 function selectAuthor(user: StaffUser) {
   form.value.author = getStaffName(user)
-  form.value.authorAvatar = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(getStaffName(user))}&background=random&size=200`
+  form.value.authorAvatar = user.avatar_url || ''
   authorSearch.value = ''
   showAuthorDropdown.value = false
 }
@@ -273,7 +273,10 @@ function removeImage() {
             </td>
             <td class="hidden px-6 py-4 lg:table-cell">
               <div class="flex items-center gap-2">
-                <img :src="article.authorAvatar" :alt="article.author" class="h-6 w-6 rounded-full object-cover" />
+                <div class="h-6 w-6 shrink-0 overflow-hidden rounded-full flex items-center justify-center text-[9px] font-medium" :style="{ backgroundColor: article.authorAvatar ? 'transparent' : 'var(--color-bg-subtle)', color: 'var(--color-text-muted)' }">
+                  <img v-if="article.authorAvatar" :src="article.authorAvatar" :alt="article.author" class="h-full w-full object-cover" />
+                  <span v-else>{{ article.author.charAt(0).toUpperCase() }}</span>
+                </div>
                 <span class="text-sm" style="color: var(--color-text-secondary)">{{ article.author }}</span>
               </div>
             </td>

@@ -218,7 +218,10 @@ watch(() => route.params.id, (id) => {
             <div class="absolute inset-x-0 bottom-0 translate-y-4 p-5 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
               <h3 class="text-lg font-medium text-white" style="font-family: var(--font-heading)">{{ look.title }}</h3>
               <div class="mt-2 flex items-center gap-3">
-                <img :src="look.authorAvatar" :alt="look.author" class="h-6 w-6 rounded-full object-cover ring-1 ring-white/20" />
+                <div class="h-6 w-6 shrink-0 overflow-hidden rounded-full ring-1 ring-white/20 flex items-center justify-center text-[9px] font-medium" :style="{ backgroundColor: look.authorAvatar ? 'transparent' : 'rgba(255,255,255,0.15)', color: '#fff' }">
+                  <img v-if="look.authorAvatar" :src="look.authorAvatar" :alt="look.author" class="h-full w-full object-cover" />
+                  <span v-else>{{ look.author.charAt(0).toUpperCase() }}</span>
+                </div>
                 <span class="text-xs text-white/70">{{ look.author }}</span>
               </div>
               <div class="mt-3 flex flex-wrap gap-1.5">

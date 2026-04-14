@@ -135,13 +135,14 @@ function handleLogout() {
         >
           <div class="flex items-center gap-3">
             <div
-              class="flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium uppercase"
+              class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-xs font-medium uppercase"
               :style="{
                 backgroundColor: auth.user?.role === 'admin' ? 'var(--color-accent-gold)' : 'var(--color-accent-cool)',
                 color: '#fff',
               }"
             >
-              {{ (auth.user?.display_name || auth.user?.username || 'U').charAt(0) }}
+              <img v-if="auth.user?.avatar_url" :src="auth.user.avatar_url" class="h-full w-full object-cover" />
+              <span v-else>{{ (auth.user?.display_name || auth.user?.username || 'U').charAt(0) }}</span>
             </div>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium">{{ auth.user?.display_name || auth.user?.username }}</p>
