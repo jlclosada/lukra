@@ -41,6 +41,8 @@ const filteredTagSuggestions = computed(() => {
   return existingTags.value.filter(t => t.toLowerCase().includes(q) && !form.value.tags.includes(t))
 })
 
+function delayBlur(fn: () => void) { setTimeout(fn, 200) }
+
 function addTag(tag: string) {
   const trimmed = tag.trim().toLowerCase()
   if (trimmed && !form.value.tags.includes(trimmed)) {
@@ -646,7 +648,7 @@ function saveHotspots() {
                       class="flex-1 min-w-[100px] bg-transparent text-sm outline-none placeholder:text-[var(--color-text-muted)]"
                       @keydown="onTagInputKeydown"
                       @focus="showTagSuggestions = true"
-                      @blur="setTimeout(() => showTagSuggestions = false, 200)"
+                      @blur="delayBlur(() => showTagSuggestions = false)"
                     />
                   </div>
                   <!-- Tag suggestions dropdown -->
@@ -839,7 +841,7 @@ function saveHotspots() {
                           placeholder="Buscar marca..."
                           class="w-full bg-transparent text-sm outline-none placeholder:text-[var(--color-text-muted)]"
                           @focus="showBrandDropdown = true"
-                          @blur="setTimeout(() => showBrandDropdown = false, 200)"
+                          @blur="delayBlur(() => showBrandDropdown = false)"
                         />
                       </div>
                       <div v-if="showBrandDropdown" class="absolute left-0 right-0 z-30 mt-1 border rounded-sm overflow-hidden shadow-lg" :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-elevated)' }">
