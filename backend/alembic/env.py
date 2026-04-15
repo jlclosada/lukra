@@ -13,6 +13,9 @@ from app.models.user import User  # noqa: F401
 from app.models.newsletter import NewsletterSubscriber  # noqa: F401
 from app.models.brand import Brand  # noqa: F401
 from app.models.tag import Tag  # noqa: F401
+from app.models.article import Article  # noqa: F401
+from app.models.look import Look  # noqa: F401
+from app.models.trend import Trend  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

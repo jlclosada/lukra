@@ -1,54 +1,76 @@
-import type { Article } from '@/data/mock'
-import { articles as mockArticles } from '@/data/mock'
+import { api } from '@/services/api'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-const STORAGE_KEY = 'lukra_articles'
+export interface Article {
+  id: string
+  title: string
+  excerpt: string
+  content?: string | null
+  image: string
+  author: string
+  author_avatar?: string | null
+  author_id?: string
+  category: string
+  read_time: number
+  featured: boolean
+  published: boolean
+  created_at: string
+  updated_at: string
+  // Legacy aliases used in templates
+  authorAvatar?: string
+  readTime?: number
+  date?: string
+}
+
+function normalize(a: Article): Article {
+  return {
+    ...a,
+    authorAvatar: a.author_avatar ?? undefined,
+    readTime: a.read_time,
+    date: a.created_at,
+  }
+}
+
+interface ArticleListResponse {
+  items: Article[]
+  total: number
+}
 
 export const useArticlesStore = defineStore('articles', () => {
   const articles = ref<Article[]>([])
+  const loading = ref(false)
 
-  function load() {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      try {
-        const data = JSON.parse(raw) as Article[]
-        if (Array.isArray(data) && data.length > 0) {
-          articles.value = data
-          return
-        }
-      } catch { /* ignore */ }
+  async function load() {
+    loading.value = true
+    try {
+      const data = await api<ArticleListResponse>('/articles/', { params: { per_page: 100 } })
+      articles.value = data.items.map(normalize)
+    } catch (e) {
+      console.error('Failed to load articles:', e)
+    } finally {
+      loading.value = false
     }
-    // First load — seed from mock data
-    articles.value = [...mockArticles]
-    persist()
   }
 
-  function persist() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(articles.value))
+  async function addArticle(article: Record<string, unknown>) {
+    const data = await api<Article>('/articles/', { method: 'POST', body: article })
+    const normalized = normalize(data)
+    articles.value.unshift(normalized)
+    return normalized
   }
 
-  function addArticle(article: Omit<Article, 'id'> & { id?: string }) {
-    const newArticle: Article = {
-      ...article,
-      id: article.id || String(Date.now()),
-    }
-    articles.value.unshift(newArticle)
-    persist()
-    return newArticle
-  }
-
-  function updateArticle(id: string, updates: Partial<Article>) {
+  async function updateArticle(id: string, updates: Record<string, unknown>) {
+    const data = await api<Article>(`/articles/${id}`, { method: 'PATCH', body: updates })
+    const normalized = normalize(data)
     const idx = articles.value.findIndex(a => a.id === id)
-    if (idx !== -1) {
-      articles.value[idx] = { ...articles.value[idx], ...updates }
-      persist()
-    }
+    if (idx !== -1) articles.value[idx] = normalized
+    return normalized
   }
 
-  function deleteArticle(id: string) {
+  async function deleteArticle(id: string) {
+    await api(`/articles/${id}`, { method: 'DELETE' })
     articles.value = articles.value.filter(a => a.id !== id)
-    persist()
   }
 
   function getById(id: string) {
@@ -59,11 +81,9 @@ export const useArticlesStore = defineStore('articles', () => {
     articles.value.filter(a => a.published !== false),
   )
 
-  // Initialize on creation
-  load()
-
   return {
     articles,
+    loading,
     publishedArticles,
     load,
     addArticle,

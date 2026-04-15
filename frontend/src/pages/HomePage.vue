@@ -327,7 +327,7 @@ function formatDate(dateStr: string) {
               <Clock :size="12" />
               <span>{{ featuredArticle.readTime }} min</span>
               <span>·</span>
-              <span>{{ formatDate(featuredArticle.date) }}</span>
+              <span>{{ formatDate(featuredArticle.date || featuredArticle.created_at || '') }}</span>
             </div>
           </div>
         </RouterLink>
@@ -351,7 +351,7 @@ function formatDate(dateStr: string) {
                 <Clock :size="11" />
                 <span>{{ article.readTime }} min</span>
                 <span>·</span>
-                <span>{{ formatDate(article.date) }}</span>
+                <span>{{ formatDate(article.date || article.created_at || '') }}</span>
               </div>
             </div>
           </RouterLink>

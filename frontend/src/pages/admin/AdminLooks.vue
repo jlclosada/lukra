@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Look, ProductHotspot } from '@/data/mock'
 import { api } from '@/services/api'
+import type { Look, ProductHotspot } from '@/stores/looks'
 import { useLooksStore } from '@/stores/looks'
 import { Camera, Edit3, Heart, ImagePlus, MapPin, Plus, Search, Trash2, Upload, X } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
@@ -92,7 +92,7 @@ function openEdit(look: Look) {
     description: look.description || '',
     image: look.image,
     author: look.author,
-    authorAvatar: look.authorAvatar,
+    authorAvatar: look.authorAvatar || '',
     tags: [...look.tags],
     season: look.season,
     aspect: look.aspect,
@@ -101,27 +101,23 @@ function openEdit(look: Look) {
   showForm.value = true
 }
 
-function saveLook() {
+async function saveLook() {
   const tags = form.value.tags
 
   if (editingLook.value) {
-    looksStore.updateLook(editingLook.value.id, {
+    await looksStore.updateLook(editingLook.value.id, {
       title: form.value.title,
       description: form.value.description,
       image: form.value.image,
-      author: form.value.author,
-      authorAvatar: form.value.authorAvatar,
       tags,
       season: form.value.season,
       aspect: form.value.aspect,
     })
   } else {
-    looksStore.addLook({
+    await looksStore.addLook({
       title: form.value.title,
       description: form.value.description,
       image: form.value.image || 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80',
-      author: form.value.author,
-      authorAvatar: form.value.authorAvatar || '',
       tags,
       likes: 0,
       season: form.value.season,
@@ -131,8 +127,8 @@ function saveLook() {
   showForm.value = false
 }
 
-function deleteLook(id: string) {
-  looksStore.deleteLook(id)
+async function deleteLook(id: string) {
+  await looksStore.deleteLook(id)
   confirmDelete.value = null
 }
 
@@ -310,9 +306,9 @@ function startDrag(id: string, e: MouseEvent) {
   document.addEventListener('mouseup', onUp)
 }
 
-function saveHotspots() {
+async function saveHotspots() {
   if (hotspotEditorLook.value) {
-    looksStore.updateLook(hotspotEditorLook.value.id, {
+    await looksStore.updateLook(hotspotEditorLook.value.id, {
       hotspots: editingHotspots.value.map(h => ({ ...h })),
     })
   }

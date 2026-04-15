@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import auth, brands, newsletter, tags, users
+from app.routers import articles, auth, brands, looks, newsletter, tags, trends, users
 
 
 @asynccontextmanager
@@ -33,6 +33,9 @@ app.include_router(users.router, prefix="/api/v1")
 app.include_router(newsletter.router, prefix="/api/v1")
 app.include_router(brands.router, prefix="/api/v1")
 app.include_router(tags.router, prefix="/api/v1")
+app.include_router(articles.router, prefix="/api/v1")
+app.include_router(looks.router, prefix="/api/v1")
+app.include_router(trends.router, prefix="/api/v1")
 
 
 @app.get("/api/health")

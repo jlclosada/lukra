@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Look, ProductHotspot } from '@/data/mock';
 import { useAuthStore } from '@/stores/auth';
+import type { Look, ProductHotspot } from '@/stores/looks';
 import { useUserActivityStore } from '@/stores/userActivity';
 import { ArrowRight, Bookmark, ExternalLink, Heart, Share2, ShoppingBag, Sparkles, X } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';

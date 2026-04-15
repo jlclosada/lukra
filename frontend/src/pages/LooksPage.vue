@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import LookModal from '@/components/LookModal.vue'
-import type { Look } from '@/data/mock'
 import { useAuthStore } from '@/stores/auth'
+import type { Look } from '@/stores/looks'
 import { useLooksStore } from '@/stores/looks'
 import { useUserActivityStore } from '@/stores/userActivity'
 import { Bookmark, Eye, Heart, Search, X } from 'lucide-vue-next'
