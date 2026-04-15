@@ -9,6 +9,8 @@ COPY . .
 
 RUN chmod +x start.sh
 
+ENV PYTHONPATH=/app
+
 EXPOSE 8000
 
 CMD ["./start.sh"]
