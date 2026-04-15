@@ -21,6 +21,8 @@ const showForm = ref(false)
 const editingArticle = ref<Article | null>(null)
 const confirmDelete = ref<string | null>(null)
 
+function delayBlur(fn: () => void) { setTimeout(fn, 200) }
+
 // ── Staff users (authors) ──
 const staffUsers = ref<StaffUser[]>([])
 const staffLoading = ref(false)
@@ -454,7 +456,7 @@ function removeImage() {
                       placeholder="Buscar autor..."
                       class="w-full bg-transparent text-sm outline-none placeholder:text-[var(--color-text-muted)]"
                       @focus="showAuthorDropdown = true"
-                      @blur="setTimeout(() => showAuthorDropdown = false, 200)"
+                      @blur="delayBlur(() => showAuthorDropdown = false)"
                     />
                   </div>
                   <div v-if="showAuthorDropdown" class="absolute left-0 right-0 z-20 mt-1 border rounded-sm overflow-hidden shadow-lg" :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-elevated)' }">

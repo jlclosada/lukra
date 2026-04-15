@@ -61,7 +61,7 @@ const looksStore = useLooksStore()
 
 const homeLooks = computed(() => {
   if (config.homeLookIds.length === 0) return looksStore.looks.slice(0, 8)
-  return config.homeLookIds.map(id => looksStore.looks.find(l => l.id === id)).filter(Boolean)
+  return config.homeLookIds.map(id => looksStore.looks.find(l => l.id === id)).filter((x): x is NonNullable<typeof x> => Boolean(x))
 })
 
 // ── Articles preview ──
@@ -75,14 +75,14 @@ const recentArticles = computed(() => {
   }
   return config.homeArticleIds
     .map(id => articles.value.find(a => a.id === id))
-    .filter(Boolean)
+    .filter((x): x is NonNullable<typeof x> => Boolean(x))
 })
 
 // ── Trends ──
 const trendsStore = useTrendsStore()
 const homeTrends = computed(() => {
   if (config.homeTrendIds.length === 0) return trendsStore.trends.slice(0, 3)
-  return config.homeTrendIds.map(id => trendsStore.trends.find(t => t.id === id)).filter(Boolean)
+  return config.homeTrendIds.map(id => trendsStore.trends.find(t => t.id === id)).filter((x): x is NonNullable<typeof x> => Boolean(x))
 })
 
 // ── Scroll-reveal observer ──

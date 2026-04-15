@@ -42,6 +42,8 @@ const tagInput = ref('')
 const showTagSuggestions = ref(false)
 const apiTags = ref<ApiTag[]>([])
 
+function delayBlur(fn: () => void) { setTimeout(fn, 200) }
+
 async function fetchTags() {
   try {
     const data = await api<{ items: ApiTag[] }>('/tags/', { params: { per_page: 200 } })
@@ -445,7 +447,7 @@ onMounted(() => {
                       placeholder="Buscar autor..."
                       class="w-full bg-transparent text-sm outline-none placeholder:text-[var(--color-text-muted)]"
                       @focus="showAuthorDropdown = true"
-                      @blur="setTimeout(() => showAuthorDropdown = false, 200)"
+                      @blur="delayBlur(() => showAuthorDropdown = false)"
                     />
                   </div>
                   <div v-if="showAuthorDropdown" class="absolute left-0 right-0 z-20 mt-1 border rounded-sm overflow-hidden shadow-lg" :style="{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-elevated)' }">
@@ -503,7 +505,7 @@ onMounted(() => {
                       class="flex-1 min-w-[100px] bg-transparent text-sm outline-none placeholder:text-[var(--color-text-muted)]"
                       @keydown="onTagInputKeydown"
                       @focus="showTagSuggestions = true"
-                      @blur="setTimeout(() => showTagSuggestions = false, 200)"
+                      @blur="delayBlur(() => showTagSuggestions = false)"
                     />
                   </div>
                   <div
