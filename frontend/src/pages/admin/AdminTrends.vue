@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Trend } from '@/data/mock'
 import { api } from '@/services/api'
+import type { Trend } from '@/stores/trends'
 import { useTrendsStore } from '@/stores/trends'
 import { Edit3, ImagePlus, Plus, Search, Trash2, TrendingUp, Upload, X } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
@@ -219,27 +219,23 @@ function openEdit(trend: Trend) {
   showForm.value = true
 }
 
-function saveTrend() {
+async function saveTrend() {
   const tags = form.value.tags
   if (editingTrend.value) {
-    trendsStore.updateTrend(editingTrend.value.id, {
+    await trendsStore.updateTrend(editingTrend.value.id, {
       title: form.value.title,
       description: form.value.description,
       image: form.value.image,
-      author: form.value.author,
-      authorAvatar: form.value.authorAvatar,
       tags,
       season: form.value.season,
       popularity: form.value.popularity,
       published: form.value.published,
     })
   } else {
-    trendsStore.addTrend({
+    await trendsStore.addTrend({
       title: form.value.title,
       description: form.value.description,
       image: form.value.image || 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80',
-      author: form.value.author,
-      authorAvatar: form.value.authorAvatar || 'https://i.pravatar.cc/80?img=1',
       tags,
       season: form.value.season,
       popularity: form.value.popularity,
@@ -249,8 +245,8 @@ function saveTrend() {
   showForm.value = false
 }
 
-function deleteTrend(id: string) {
-  trendsStore.deleteTrend(id)
+async function deleteTrend(id: string) {
+  await trendsStore.deleteTrend(id)
   confirmDelete.value = null
 }
 

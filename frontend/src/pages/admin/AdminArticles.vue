@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import RichTextEditor from '@/components/RichTextEditor.vue'
-import type { Article } from '@/data/mock'
 import { api } from '@/services/api'
+import type { Article } from '@/stores/articles'
 import { useArticlesStore } from '@/stores/articles'
 import { BookOpen, Clock, Edit3, ImagePlus, Plus, Search, Trash2, Upload, X } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
@@ -122,31 +122,36 @@ function openEdit(article: Article) {
     content: article.content || '',
     image: article.image,
     author: article.author,
-    authorAvatar: article.authorAvatar,
+    authorAvatar: article.authorAvatar || '',
     category: article.category,
-    readTime: article.readTime,
+    readTime: article.readTime ?? article.read_time ?? 5,
     featured: article.featured || false,
     published: article.published !== false,
   }
   showForm.value = true
 }
 
-function saveArticle() {
+async function saveArticle() {
+  const payload = {
+    title: form.value.title,
+    excerpt: form.value.excerpt,
+    content: form.value.content,
+    image: form.value.image,
+    category: form.value.category,
+    read_time: form.value.readTime,
+    featured: form.value.featured,
+    published: form.value.published,
+  }
   if (editingArticle.value) {
-    articlesStore.updateArticle(editingArticle.value.id, {
-      ...form.value,
-    })
+    await articlesStore.updateArticle(editingArticle.value.id, payload)
   } else {
-    articlesStore.addArticle({
-      ...form.value,
-      date: new Date().toISOString().split('T')[0],
-    })
+    await articlesStore.addArticle(payload)
   }
   showForm.value = false
 }
 
-function deleteArticle(id: string) {
-  articlesStore.deleteArticle(id)
+async function deleteArticle(id: string) {
+  await articlesStore.deleteArticle(id)
   confirmDelete.value = null
 }
 
@@ -287,7 +292,7 @@ function removeImage() {
                 <Clock :size="11" />
                 {{ article.readTime }}min
               </div>
-              <p class="mt-0.5 text-[10px]" style="color: var(--color-text-muted)">{{ formatDate(article.date) }}</p>
+              <p class="mt-0.5 text-[10px]" style="color: var(--color-text-muted)">{{ formatDate(article.date || article.created_at || '') }}</p>
             </td>
             <td class="px-6 py-4 text-center">
               <span

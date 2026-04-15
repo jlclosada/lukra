@@ -1,53 +1,72 @@
-import type { Trend } from '@/data/mock'
-import { trends as mockTrends } from '@/data/mock'
+import { api } from '@/services/api'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-const STORAGE_KEY = 'lukra_trends'
+export interface Trend {
+  id: string
+  title: string
+  description: string
+  content?: string | null
+  image: string
+  author: string
+  author_avatar?: string | null
+  author_id?: string
+  tags: string[]
+  season: string
+  popularity: number
+  published?: boolean
+  created_at?: string
+  updated_at?: string
+  // Legacy alias
+  authorAvatar?: string
+}
+
+function normalize(t: Trend): Trend {
+  return {
+    ...t,
+    authorAvatar: t.author_avatar ?? undefined,
+  }
+}
+
+interface TrendListResponse {
+  items: Trend[]
+  total: number
+}
 
 export const useTrendsStore = defineStore('trends', () => {
   const trends = ref<Trend[]>([])
+  const loading = ref(false)
 
-  function load() {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      try {
-        const data = JSON.parse(raw) as Trend[]
-        if (Array.isArray(data) && data.length > 0) {
-          trends.value = data
-          return
-        }
-      } catch { /* ignore */ }
+  async function load() {
+    loading.value = true
+    try {
+      const data = await api<TrendListResponse>('/trends/', { params: { per_page: 100 } })
+      trends.value = data.items.map(normalize)
+    } catch (e) {
+      console.error('Failed to load trends:', e)
+    } finally {
+      loading.value = false
     }
-    trends.value = [...mockTrends]
-    persist()
   }
 
-  function persist() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(trends.value))
+  async function addTrend(trend: Record<string, unknown>) {
+    const data = await api<Trend>('/trends/', { method: 'POST', body: trend })
+    const normalized = normalize(data)
+    trends.value.unshift(normalized)
+    return normalized
   }
 
-  function addTrend(trend: Omit<Trend, 'id'> & { id?: string }) {
-    const newTrend: Trend = {
-      ...trend,
-      id: trend.id || String(Date.now()),
-    }
-    trends.value.unshift(newTrend)
-    persist()
-    return newTrend
-  }
-
-  function updateTrend(id: string, updates: Partial<Trend>) {
+  async function updateTrend(id: string, updates: Record<string, unknown>) {
+    const data = await api<Trend>(`/trends/${id}`, { method: 'PATCH', body: updates })
+    const normalized = normalize(data)
     const idx = trends.value.findIndex(t => t.id === id)
-    if (idx !== -1) {
-      trends.value[idx] = { ...trends.value[idx], ...updates }
-      persist()
-    }
+    if (idx !== -1) trends.value[idx] = normalized
+    return normalized
   }
 
-  function deleteTrend(id: string) {
+  async function deleteTrend(id: string) {
+    await api(`/trends/${id}`, { method: 'DELETE' })
     trends.value = trends.value.filter(t => t.id !== id)
-    persist()
   }
 
   function getById(id: string) {
@@ -64,10 +83,9 @@ export const useTrendsStore = defineStore('trends', () => {
     return Array.from(tags).sort()
   })
 
-  load()
-
   return {
     trends,
+    loading,
     publishedTrends,
     allTags,
     load,

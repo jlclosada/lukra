@@ -117,7 +117,7 @@ if (!article.value) {
             </div>
             <div class="flex items-center gap-2 text-xs">
               <Calendar :size="13" />
-              <span>{{ formatDate(article.date) }}</span>
+              <span>{{ formatDate(article.date || article.created_at || '') }}</span>
             </div>
             <div class="flex items-center gap-2 text-xs">
               <Clock :size="13" />

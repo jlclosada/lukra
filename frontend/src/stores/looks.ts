@@ -1,53 +1,85 @@
-import type { Look } from '@/data/mock'
-import { looks as mockLooks } from '@/data/mock'
+import { api } from '@/services/api'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-const STORAGE_KEY = 'lukra_looks'
+export interface ProductHotspot {
+  id: string
+  x: number
+  y: number
+  name: string
+  brand: string
+  price: number
+  currency: string
+  productUrl: string
+  image?: string
+}
+
+export interface Look {
+  id: string
+  title: string
+  description?: string | null
+  image: string
+  author: string
+  author_avatar?: string | null
+  author_id?: string
+  tags: string[]
+  likes: number
+  season: string
+  aspect: 'tall' | 'wide' | 'square'
+  hotspots?: ProductHotspot[] | null
+  published?: boolean
+  created_at?: string
+  updated_at?: string
+  // Legacy alias
+  authorAvatar?: string
+}
+
+function normalize(l: Look): Look {
+  return {
+    ...l,
+    authorAvatar: l.author_avatar ?? undefined,
+  }
+}
+
+interface LookListResponse {
+  items: Look[]
+  total: number
+}
 
 export const useLooksStore = defineStore('looks', () => {
   const looks = ref<Look[]>([])
+  const loading = ref(false)
 
-  function load() {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      try {
-        const data = JSON.parse(raw) as Look[]
-        if (Array.isArray(data) && data.length > 0) {
-          looks.value = data
-          return
-        }
-      } catch { /* ignore */ }
+  async function load() {
+    loading.value = true
+    try {
+      const data = await api<LookListResponse>('/looks/', { params: { per_page: 100 } })
+      looks.value = data.items.map(normalize)
+    } catch (e) {
+      console.error('Failed to load looks:', e)
+    } finally {
+      loading.value = false
     }
-    looks.value = [...mockLooks]
-    persist()
   }
 
-  function persist() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(looks.value))
+  async function addLook(look: Record<string, unknown>) {
+    const data = await api<Look>('/looks/', { method: 'POST', body: look })
+    const normalized = normalize(data)
+    looks.value.unshift(normalized)
+    return normalized
   }
 
-  function addLook(look: Omit<Look, 'id'> & { id?: string }) {
-    const newLook: Look = {
-      ...look,
-      id: look.id || String(Date.now()),
-    }
-    looks.value.unshift(newLook)
-    persist()
-    return newLook
-  }
-
-  function updateLook(id: string, updates: Partial<Look>) {
+  async function updateLook(id: string, updates: Record<string, unknown>) {
+    const data = await api<Look>(`/looks/${id}`, { method: 'PATCH', body: updates })
+    const normalized = normalize(data)
     const idx = looks.value.findIndex(l => l.id === id)
-    if (idx !== -1) {
-      looks.value[idx] = { ...looks.value[idx], ...updates }
-      persist()
-    }
+    if (idx !== -1) looks.value[idx] = normalized
+    return normalized
   }
 
-  function deleteLook(id: string) {
+  async function deleteLook(id: string) {
+    await api(`/looks/${id}`, { method: 'DELETE' })
     looks.value = looks.value.filter(l => l.id !== id)
-    persist()
   }
 
   function getById(id: string) {
@@ -60,10 +92,9 @@ export const useLooksStore = defineStore('looks', () => {
     return Array.from(tags).sort()
   })
 
-  load()
-
   return {
     looks,
+    loading,
     allTags,
     load,
     addLook,

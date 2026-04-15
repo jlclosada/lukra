@@ -117,7 +117,7 @@ onMounted(() => {
               <div>
                 <p class="text-sm font-medium">{{ featured.author }}</p>
                 <div class="flex items-center gap-2 text-xs" style="color: var(--color-text-muted)">
-                  <span>{{ formatDate(featured.date) }}</span>
+                  <span>{{ formatDate(featured.date || featured.created_at || '') }}</span>
                   <span>·</span>
                   <Clock :size="11" />
                   <span>{{ featured.readTime }} min</span>
